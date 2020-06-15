@@ -1,5 +1,4 @@
 # Antecedent Rainfall Calculator
-
 ## Where can I get it?
 Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/latest)
 
