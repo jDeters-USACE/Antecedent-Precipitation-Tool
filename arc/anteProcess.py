@@ -1229,10 +1229,10 @@ class Main(object):
                                                                      watershed_analysis=self.watershed_analysis)
                 if not wet_dry_season_result == 'ERROR':
                     if wet_dry_season_result == 'Wet':
-                        description_table_values.append([r"WebWIMP H$_2$O Balance", 'Wet Season'])
+                        description_table_values.append([r"WebWIMP H$_2$O Budget", 'Wet Season'])
                         description_table_colors.append([light_grey, white])
                     if wet_dry_season_result == 'Dry':
-                        description_table_values.append([r"WebWIMP H$_2$O Balance", 'Dry Season'])
+                        description_table_values.append([r"WebWIMP H$_2$O Budget", 'Dry Season'])
                         description_table_colors.append([light_grey, light_red])
             except Exception:
                 wet_dry_season_result = 'Error'
