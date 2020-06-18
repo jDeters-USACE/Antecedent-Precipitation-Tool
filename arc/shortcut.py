@@ -35,7 +35,7 @@ def create_shortcut_unfrozen():
     # Define Shortcut Variables
     python_path = 'C:\\Antecedent Precipitation Tool\\WinPythonZero32\\python-3.6.5\\python.exe'
     desktop_path = str(winshell.desktop()) # get desktop path
-    icon = "C:\\Antecedent Precipitation Tool\\GUI Images\\Graph.ico"
+    icon = "C:\\Antecedent Precipitation Tool\\images\\Graph.ico"
     launch_script = '"C:\\Antecedent Precipitation Tool\\Python Scripts\\ant_GUI.py"'
     shortcut_path = os.path.join(desktop_path, 'Antecedent Precipitation Tool.lnk')
     description = 'Launches the Antecedent Precipitation Tool, written by Jason C. Deters'

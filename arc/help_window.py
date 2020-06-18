@@ -63,17 +63,18 @@ class Main(object):
 
         # Create Master Frame
         self.master = tkinter.Tk()
-        width = 978
-        height = 735
-        self.master.geometry("{}x{}+431+332".format(width, height))
-        self.master.minsize(width, height)
+        #width = 978
+        #height = 735
+        #self.master.geometry("{}x{}+431+332".format(width, height))
+        self.master.geometry("")
+        #self.master.minsize(width, height)
         #self.master.maxsize(1370, 749)
         self.master.resizable(1, 1)
         self.master.title("About the Antecedent Precipitation Tool")
 
         # Set Window Icon
         try:
-            graph_icon_file = '{}\\GUI Images\\Graph.ico'.format(root_folder)
+            graph_icon_file = '{}\\images\\Graph.ico'.format(root_folder)
             self.master.wm_iconbitmap(graph_icon_file)
         except Exception:
             graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
@@ -203,6 +204,9 @@ class Main(object):
                                         command=self.click_report_issue_button)
         self.button_close.grid(row=self.row, column=0, pady=12, padx=200, sticky='e')
 
+
+        # Configure rows/columns
+        self.master.geometry("+800+400")
         # Configure rows and columns
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
@@ -238,8 +242,12 @@ class Main(object):
                 subprocess.Popen(pdf_local_path, shell=True)
                 print('')
                 print('Ready for new input.')
+            if pdf_local_path == '':
+                pdf_text = "PDF Instructions (Coming Soon!)"
+            else:
+                pdf_text = 'PDF Instructions'
             pdf_button = ttk.Button(self.central_buttons_frame,
-                                    text='PDF Instructions',
+                                    text=pdf_text,
                                     command=open_pdf_reference)
             pdf_button.grid(row=self.row, column=1, padx=10, pady=5, sticky='e')
             # Auto-disable before link provided
@@ -252,8 +260,12 @@ class Main(object):
             def open_youtube_url():
                 webbrowser.open(youtube_url, new=1, autoraise=True)
             # Asign function to new button
+            if youtube_url == '':
+                youtube_text = "YouTube Demonstration (Coming Soon!)"
+            else:
+                youtube_text = 'YouTube Demonstration'
             youtube_button = ttk.Button(self.central_buttons_frame,
-                                        text='YouTube Demonstration',
+                                        text=youtube_text,
                                         command=open_youtube_url)
             youtube_button.grid(row=self.row, column=2, padx=0, pady=5, sticky='e')
             # Auto-disable before link provided
