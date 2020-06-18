@@ -185,11 +185,11 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     ax4 = plt.subplot2grid((20, 9), (12, 0), colspan=9, rowspan=9)
     ax5 = plt.subplot2grid((20, 18), (3, 11), colspan=4, rowspan=7)
 
-    params = {"ytick.color" : "w",
-              "xtick.color" : "w",
-              "axes.labelcolor" : "w",
-              "axes.edgecolor" : "w"}
-    plt.rcParams.update(params)
+#    params = {"ytick.color" : "w",
+#              "xtick.color" : "w",
+#              "axes.labelcolor" : "w",
+#              "axes.edgecolor" : "w"}
+#    plt.rcParams.update(params)
 
     #pie_colors = [light_red, light_green, light_blue]
     patchyes, texts, autotexts = ax5.pie(pie_sizes,
@@ -211,7 +211,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     import os
     MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
     ROOT = os.path.split(MODULE_PATH)[0]
-    logoFile = ROOT + "\\GUI Images\\Traverse_80%_1920.png"
+    logoFile = ROOT + "\\images\\Traverse_80%_1920.png"
     logo = plt.imread(logoFile)
     img = fig.figimage(X=logo, xo=0, yo=0)
 

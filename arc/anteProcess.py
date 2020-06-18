@@ -33,7 +33,7 @@ import warnings
 import pickle
 import stat
 
-# Necessary for direct imports if running in non-frozen state
+# Get version
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.dirname(MODULE_PATH)
 
@@ -79,7 +79,19 @@ except Exception:
     import web_wimp_scraper
 
 
+# Version stuff
+VERSION_FILE_PATH = '{}\\version'.format(ROOT)
+with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
+    for line in VERSION_FILE:
+        VERSION_STRING = line.replace('\n','')
+        VERSION_LIST = VERSION_STRING.split('.')
+        VERSION_FOR_PATHS = 'v{}_{}_{}'.format(VERSION_LIST[0], VERSION_LIST[1], VERSION_LIST[2])
+        break
+
+
 # FUNCTION DEFINITIONS
+
+
 
 def file_older_than(file_path, time_unit, time_value):
     """
@@ -104,6 +116,24 @@ def file_older_than(file_path, time_unit, time_value):
         return True
     else:
         return False
+
+def time2String(total_seconds):
+    if total_seconds < 61:
+        seconds = str(int(total_seconds))
+        output_string = '{} seconds'.format(seconds)
+    elif total_seconds > 60 and total_seconds < 3601:
+        minutes = int(total_seconds / 60)
+        minutes_loss = (minutes * 60)
+        seconds = int(total_seconds - minutes_loss)
+        output_string = '{} minutes and {} seconds'.format(minutes, seconds)
+    elif total_seconds > 3600:
+        hours = int(total_seconds / 3600)
+        hours_loss = (hours * 3600)
+        minutes = int((total_seconds - hours_loss)/60)
+        minutes_loss = (minutes * 60)
+        seconds = int(total_seconds - hours_loss - minutes_loss)
+        output_string = '{} hours, {} minutes, and {} seconds'.format(hours, minutes, seconds)
+    return output_string
 
 def value_list_to_water_year_table(dates, values):
     log = JLog.PrintLog()
@@ -314,7 +344,10 @@ class Main(object):
         if self.save_folder is not None:
             # Create PDF output Folder
             if self.data_type == 'PRCP':
-                self.folderPath = self.save_folder + "\\v_1_0\\" + str(self.site_lat)+ ', ' + str(self.site_long)
+                self.folderPath = '{}\\{}\\{}, {}'.format(self.save_folder,
+                                                          VERSION_FOR_PATHS,
+                                                          self.site_lat,
+                                                          self.site_long)
             if self.data_type == 'SNOW':
                 self.folderPath = self.save_folder + "\\Snowfall\\" + str(self.site_lat)+ ', ' + str(self.site_long)
             if self.data_type == 'SNWD':
@@ -580,13 +613,10 @@ class Main(object):
         """Maintains processing pool until all jobs are complete"""
         self.log.print_section('MULTIPROCESSING FINISH')
         count_copy = enqueue_count
+        timer_list = []
+        timer_list.append([time.clock(), count_copy])
         self.log.Wrap('Waiting for sub-processes to download stations:')
         while count_copy > 0:
-            if count_copy < 2:
-                msg = '{0} station remaining...'.format(count_copy)
-            else:
-                msg = '{0} stations remaining...'.format(count_copy)
-            self.log.print_status_message(msg)
             # Keep # Minions at original num_minions
             for minion in minions:
                 if not minion.is_alive():
@@ -598,7 +628,7 @@ class Main(object):
                     minions.append(new_minion)
             # Pull results_queue to keep queue buffer from overflowing
             try:
-                result = results_queue.get(block=True, timeout=30)
+                result = results_queue.get(block=True, timeout=5)
                 if result == "Maxed":
                     count_copy += 1
                 else:
@@ -609,8 +639,42 @@ class Main(object):
                     self.recentStations.append(result)
                     self.allStations.append(result)
                 count_copy -= 1
+                # Discern avg. pace and approximate time remaining
+                if count_copy < enqueue_count:
+                    timer_list.append([time.clock(), count_copy])
+                    if len(timer_list) > 80:
+                        timer_list.remove(timer_list[0])
+                    time_taken = time.clock() - timer_list[0][0]
+                    tasks_complete = timer_list[0][1] - count_copy
+                    seconds_per_task = time_taken/tasks_complete
+                    seconds_remaining = count_copy * seconds_per_task
+                    remaining_string = time2String(seconds_remaining)
+                    if count_copy < 2:
+                        msg = '{} station remaining.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                    else:
+                        msg = '{} stations left.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                    self.log.print_status_message(msg)
             except Exception:
                 result = None
+                # Discern avg. pace and approximate time remaining
+                if count_copy < enqueue_count:
+                    timer_list.append([time.clock(), count_copy])
+                    if len(timer_list) > 80:
+                        timer_list.remove(timer_list[0])
+                    time_taken = time.clock() - timer_list[0][0]
+                    tasks_complete = timer_list[0][1] - count_copy
+                    seconds_per_task = time_taken/tasks_complete
+                    seconds_remaining = count_copy * seconds_per_task
+                    remaining_string = time2String(seconds_remaining)
+                    if count_copy < 2:
+                        msg = '{} station remaining.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                        missing_spaces = " " * (119 - len(msg))
+                        msg = '{}{}'.format(msg, missing_spaces)
+                    else:
+                        msg = '{} stations left.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                        missing_spaces = " " * (119 - len(msg))
+                        msg = '{}{}'.format(msg, missing_spaces)
+                    self.log.print_status_message(msg)
                 time.sleep(1)
         # Add poison pill to queue so we can track when all processes are actually complete
             # This method is less glitchy than using a joinable queue
@@ -776,7 +840,7 @@ class Main(object):
 
         # CREATE EMPTY DATAFRAME (self.finalDF)
         self.log.Wrap("")
-        self.log.Wrap('Creating an empty dataframe to populate with weather station data...')
+        self.log.Wrap('Creating an empty dataframe from {} to {} to populate with weather station data...'.format(self.dates.normal_period_data_start_date, self.dates.actual_data_end_date))
         index = pandas.date_range(start=self.dates.normal_period_data_start_date,
                                   end=self.dates.actual_data_end_date,
                                   freq='D')
@@ -846,7 +910,7 @@ class Main(object):
                         # Clearing previous table data
                         station_table_values = []
                         # Clearing previous dataFrame in case a better fit is found.
-                        self.log.Wrap('Creating an empty dataset with to populate with weather data...')
+                        self.log.Wrap('Creating an empty dataset to populate with weather data...')
                         self.log.Wrap("")
                         index = pandas.date_range(start=self.dates.normal_period_data_start_date,
                                                   end=self.dates.actual_data_end_date,
@@ -1228,11 +1292,10 @@ class Main(object):
                                                                      output_folder=self.folderPath,
                                                                      watershed_analysis=self.watershed_analysis)
                 if not wet_dry_season_result == 'ERROR':
-                    if wet_dry_season_result == 'Wet':
-                        description_table_values.append([r"WebWIMP H$_2$O Budget", 'Wet Season'])
+                    description_table_values.append([r"WebWIMP H$_2$O Balance", wet_dry_season_result])
+                    if wet_dry_season_result == 'Wet Season':
                         description_table_colors.append([light_grey, white])
-                    if wet_dry_season_result == 'Dry':
-                        description_table_values.append([r"WebWIMP H$_2$O Budget", 'Dry Season'])
+                    if wet_dry_season_result == 'Dry Season':
                         description_table_colors.append([light_grey, light_red])
             except Exception:
                 wet_dry_season_result = 'Error'
@@ -1289,7 +1352,7 @@ class Main(object):
         #        ax4 = plt.subplot2grid((9, 10), (7, 3), colspan=7, rowspan=1)
             # Add Logo
             try:
-                logo_file = ROOT + "\\GUI Images\\RD_1_0.png"
+                logo_file = ROOT + "\\images\\RD_1_0.png"
                 logo = plt.imread(logo_file)
             except:
                 logo_file = os.path.join(sys.prefix, 'images\\RD_1_0.png')
@@ -1581,6 +1644,6 @@ class Main(object):
 
 if __name__ == '__main__':
     INSTANCE = Main()
-    INSTANCE.setInputs(['PRCP', 38.5, -121.5, 2011, 11, 11, "Test image name", "Test image source", r"C:\Users\L2RCSJ9D\Desktop", False])
+    INSTANCE.setInputs(['PRCP', '38.5', '-121.5', 2020, '02', '02', None, None, 'd:\\Code\\Python\\WinPythonARC_dev_EPA\\Outputs','0'])
 #    INSTANCE.setInputs(['PRCP', 38.789972, -120.797499, 2018, 10, 15, "Test image name", "Test image source", r"C:\Users\L2RCSJ9D\Desktop", False])
     raw_input('Stall for debugging.  Press enter or click X to close')

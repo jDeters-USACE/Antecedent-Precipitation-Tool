@@ -34,6 +34,7 @@ MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 # Find ROOT folder
 ROOT = os.path.split(MODULE_PATH)[0]
 
+
 # Import Custom Libraries
 try:
     # Frozen Application Method
@@ -47,23 +48,33 @@ except Exception:
         sys.path.append('{}\\arc\\utilities'.format(ROOT))
     import JLog
 
-def check_local_version(version_local_path):
-    """Checks local version number"""
-    log = JLog.PrintLog()
-    local_version = 0
-    # Query ProcDate
-    with open(version_local_path, 'r') as version_file:
-        for line in version_file:
-            local_version = float(line)
-            break
-    return(local_version)
 
-def check_web_version(version_url):
-    """Uses requests to check the first line of a text file at a URL"""
-    response = requests.get(version_url)
-    time.sleep(.1)
-    web_version = float(response.text)
-    return web_version
+
+
+def parse_version(version_file_path=None, version_url=None):
+    """
+    If path is provided, reads file and parses version number
+    If url is provided, Uses requests to check the first line of a text file at a URL
+    """
+    if not version_file_path is None:
+        version_file_path = '{}\\version'.format(ROOT)
+        with open(version_file_path, 'r') as version_file:
+            for line in version_file:
+                version_string = line.replace('\n','')
+                version_list = version_string.split('.')
+                version_major = version_list[0]
+                version_minor = version_list[1]
+                version_patch = version_list[2]
+                break
+    if not version_url is None:
+        response = requests.get(version_url)
+        time.sleep(.1)
+        version_string = response.text.replace('\n','')
+        version_list = version_string.split('.')
+        version_major = version_list[0]
+        version_minor = version_list[1]
+        version_patch = version_list[2]
+    return int(version_major), int(version_minor), int(version_patch)
 
 def extract_to_folder(zip_file, output_folder, pwd=None):
 #    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
@@ -96,45 +107,20 @@ def sizeof_fmt(num, suffix='B'):
 def ensure_file_exists(file_url, local_file_path, local_check_file=None,
                        version_url=None, version_local_path=None, minimum_size=None,
                        extract_path=None, extract_pwd=None):
-    """Checks for file and version, downloads if necessary"""
+    """Checks for file, downloads if necessary"""
     download = False
     local_version = 0
     log = JLog.PrintLog()
     download_dir, file_name = os.path.split(local_file_path)
     # Check for local file
-    log.Wrap('  Checking for {}...'.format(file_name))
     local_file_exists = os.path.exists(local_file_path)
     if not local_file_exists:
-        log.Wrap('   File not found.')
         download = True
     else:
-        log.Wrap('    File located.')
         if minimum_size is not None:
-            log.Wrap('  Testing local file...')
             local_file_size = os.path.getsize(local_file_path)
             if local_file_size < minimum_size:
-                log.Wrap('    Local file corrupt. Deleting...')
-                os.remove(local_file_path)
-                download = True
-            else:
-                log.Wrap('    Passed')
-    # Check Web Version
-    if version_url is not None:
-        version_dir, version_name = os.path.split(version_local_path)
-        log.Wrap('  Checking {} web version...'.format(version_name))
-        web_version = check_web_version(version_url)
-        log.Wrap('    Web version = {}'.format(web_version))
-        # If Local File exists Check Local Version
-        version_local_file_exists = os.path.exists(version_local_path)
-        if version_local_file_exists:
-            log.Wrap('  Checking {} local version...'.format(version_name))
-            local_version = check_local_version(version_local_path)
-            log.Wrap('    Local version = {}'.format(local_version))
-        if download is False:
-            # Compare local and web versions
-            if web_version > local_version:
-                log.Wrap('  Newer version available.')
-                # If web newer, delete local and set download to True
+                log.Wrap('    {} corrupt. Deleting...'.format(local_file_path))
                 os.remove(local_file_path)
                 download = True
     if download is True:
@@ -157,10 +143,10 @@ def ensure_file_exists(file_url, local_file_path, local_check_file=None,
                         count += 1
                         if count > 25:
                             formatted_bytes = sizeof_fmt(num_bytes)
-                            log.print_status_message('    Downloading file... ({})'.format(formatted_bytes))
+                            log.print_status_message('    Downloading {}... ({})'.format(file_name, formatted_bytes))
                             count = 0
         formatted_bytes = sizeof_fmt(num_bytes)
-        log.Wrap('    File Downloaded ({})'.format(formatted_bytes))
+        log.Wrap('    {} Downloaded ({})'.format(file_name, formatted_bytes))
         sys.stdout.flush()
         time.sleep(.1)
         # Extract compressed package if selected
@@ -175,11 +161,6 @@ def ensure_file_exists(file_url, local_file_path, local_check_file=None,
             log.Wrap('     Extraction complete. Deleting zip file...')
             # Remove zip file after extraction
             os.remove(local_file_path)
-        # Write new Version file
-        log.Wrap('  Updating local version file...')
-        if version_url is not None:
-            with open(version_local_path, 'w') as version_file:
-                version_file.write('{}'.format(web_version))
         log.Time(dl_start, 'Downloading {}{}'.format(extracted, file_name))
         log.Wrap('')
     return
@@ -189,33 +170,38 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
                            extract_path=None, extract_pwd=None):
     """Checks for file and version, downloads if necessary"""
     download = False
-    local_version = 0
+    local_version_major = 0
+    local_version_minor = 0
+    local_version_patch = 0
     log = JLog.PrintLog()
     download_dir, file_name = os.path.split(local_file_path)
     log.print_section('Checking for updates to {}'.format(file_name))
     # Check Web Version
     if version_url is not None:
         version_dir, version_name = os.path.split(version_local_path)
-        log.Wrap('  Checking latest version on web...'.format(version_name))
-        web_version = check_web_version(version_url)
-        log.Wrap('    Web version = {}'.format(web_version))
+        web_version_major, web_version_minor, web_version_patch = parse_version(version_url=version_url)
         # If Local File exists Check Local Version
         version_local_file_exists = os.path.exists(version_local_path)
         if version_local_file_exists:
-            log.Wrap('  Checking {} local version...'.format(version_name))
-            local_version = check_local_version(version_local_path)
-            log.Wrap('    Local version = {}'.format(local_version))
+            local_version_major, local_version_minor, local_version_patch = parse_version(version_file_path=version_local_path)
         if download is False:
             # Compare local and web versions
-            if web_version > local_version:
-                log.Wrap('  Newer version available.')
-                # If web newer, delete local and set download to True
-                try:
-                    os.remove(local_file_path)
-                except Exception:
-                    pass
+            if web_version_major > local_version_major:
                 download = True
+            elif web_version_major == local_version_major:
+                if web_version_minor > local_version_minor:
+                    download = True
+                if web_version_minor == local_version_minor:
+                    if web_version_patch > local_version_patch:
+                        download = True
     if download is True:
+        log.Wrap('  Local version = {}.{}.{}'.format(local_version_major, local_version_minor, local_version_patch))
+        log.Wrap('  Web version = {}.{}.{}'.format(web_version_major, web_version_minor, web_version_patch))
+        # If web newer, delete local and set download to True
+        try:
+            os.remove(local_file_path)
+        except Exception:
+            pass
         # Ensure download directory exists
         try:
             os.makedirs(download_dir)
@@ -235,10 +221,10 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
                         count += 1
                         if count > 25:
                             formatted_bytes = sizeof_fmt(num_bytes)
-                            log.print_status_message('    Downloading file... ({})'.format(formatted_bytes))
+                            log.print_status_message('    Downloading {}... ({})'.format(file_name, formatted_bytes))
                             count = 0
         formatted_bytes = sizeof_fmt(num_bytes)
-        log.Wrap('    File Downloaded ({})'.format(formatted_bytes))
+        log.Wrap('    {} Downloaded ({})'.format(file_name, formatted_bytes))
         sys.stdout.flush()
         time.sleep(.1)
         # Extract compressed package if selected
@@ -255,16 +241,22 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
             os.remove(local_file_path)
         # Write new Version file
         log.Wrap('  Updating local version file...')
+        version_local_folder = os.path.dirname(version_local_path)
+        # Ensure download directory exists
+        try:
+            os.makedirs(version_local_folder)
+        except Exception:
+            pass
         if version_url is not None:
             with open(version_local_path, 'w') as version_file:
-                version_file.write('{}'.format(web_version))
+                version_file.write('{}.{}.{}'.format(web_version_major, web_version_minor, web_version_patch))
         log.Time(dl_start, 'Downloading {}{}'.format(extracted, file_name))
         log.Wrap('')
     return
 
 
 #if __name__ == '__main__':
-#    LOCAL_VERSION = check_local_version(version_local_path=r'D:\Code\Python\WinPythonARC_dev_EPA_dl_dl\core\arc_ex_version.txt')
+#    LOCAL_VERSION = check_local_version(version_local_path=r'D:\Code\Python\WinPythonARC_dev_EPA_dl_dl\core\main_ex_version.txt')
 #    print(LOCAL_VERSION)
 
 #    ensure_file_exists(file_url='https://www.spk.usace.army.mil/Portals/12/documents/regulatory/upload/APT/WBD/HUC8_Albers.zip',

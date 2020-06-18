@@ -73,6 +73,16 @@ except Exception:
     import JLog
 
 
+# Version stuff
+VERSION_FILE_PATH = '{}\\version'.format(ROOT)
+with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
+    for line in VERSION_FILE:
+        VERSION_STRING = line.replace('\n','')
+        VERSION_LIST = VERSION_STRING.split('.')
+        VERSION_FOR_PATHS = 'v{}_{}_{}'.format(VERSION_LIST[0], VERSION_LIST[1], VERSION_LIST[2])
+        break
+
+
 def click_help_button():
     help_app = help_window.Main()
     help_app.run()
@@ -108,22 +118,24 @@ class Main(object):
         self.master = tkinter.Tk()
         # Add Title
         self.master.title('Antecedent Precipitation Tool')
+        self.master.maxsize(500, 1500)
+        self.master.resizable(1, 1)
 
         # Set GUI Window Icon and Create Folder Image Object
         try:
-            graph_icon_file = root_folder + '/GUI Images/Graph.ico'
+            graph_icon_file = root_folder + '/images/Graph.ico'
             self.master.wm_iconbitmap(graph_icon_file)
-            folder_icon_path = root_folder + '/GUI Images/folder.gif'
+            folder_icon_path = root_folder + '/images/folder.gif'
             self.folder_image = tkinter.PhotoImage(file=folder_icon_path)
-            plus_icon_path = root_folder + '/GUI Images/Plus.gif'
+            plus_icon_path = root_folder + '/images/Plus.gif'
             self.PLUS_IMAGE = tkinter.PhotoImage(file=plus_icon_path)
-            minus_icon_path = root_folder + '/GUI Images/Minus.gif'
+            minus_icon_path = root_folder + '/images/Minus.gif'
             self.minus_image = tkinter.PhotoImage(file=minus_icon_path)
-            question_icon_path = root_folder + '/GUI Images/Question.gif'
+            question_icon_path = root_folder + '/images/Question.gif'
             self.question_image = tkinter.PhotoImage(file=question_icon_path)
-            waterfall_path = root_folder + '/GUI Images/Traverse_80%_503.gif'
-            waterfall_path = root_folder + '/GUI Images/Traverse_67%_1000.gif'
-            waterfall_path = root_folder + '/GUI Images/Traverse_40%_503.gif'
+            waterfall_path = root_folder + '/images/Traverse_80%_503.gif'
+            waterfall_path = root_folder + '/images/Traverse_67%_1000.gif'
+            waterfall_path = root_folder + '/images/Traverse_40%_503.gif'
             self.waterfall = tkinter.PhotoImage(file=waterfall_path)
         except Exception:
             graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
@@ -333,6 +345,8 @@ class Main(object):
         date_separator = tkinter.ttk.Separator(self.dates_frame, orient="horizontal", style="Line.TSeparator")
         date_separator.grid(row=sep_row, sticky='ew', columnspan=7, pady=3)
         self.date_separators.append(date_separator)
+        # Focus on new element
+        date_entry.entry_year.focus()
 
     def minus_function(self):
         num_rows = len(self.date_entry_boxes)
@@ -953,23 +967,6 @@ class Main(object):
         radio = params[11]
         fixed_y_max = params[12]
         forecast_enabled = params[13]
-        # Test for all fields empty
-        if batch is True:
-            empty = True
-            fields = [latitude,
-                      longitude,
-                      observation_year,
-                      observation_month,
-                      observation_day,
-                      image_name,
-                      image_source,
-                      custom_watershed_file]
-            for field in fields:
-                if not field == '':
-                    empty = False
-            if empty is True:
-                self.batch_from_csv()
-                return
         # Remove Spaces and Line Breaks from numeric fields (They were showing up when copying from Excel for some reason)
         latitude = latitude.replace(' ', '').replace('\n', '')
         longitude = longitude.replace(' ', '').replace('\n', '')
@@ -1133,9 +1130,6 @@ class Main(object):
         if batch is False:
 #-WATERSHED START
             if radio == 'Rain':
-##### DEV NOTE ######
-                    # NEED TO IMPLEMENT CUSTOM WATERSHED DIGESTION / SAMPLING
-##### DEV NOTE ######
                 # WATERSHED PROCESSING SECTION
                 if watershed_scale != 'Single Point':
                     # Announce Watershed Processing
@@ -1184,12 +1178,16 @@ class Main(object):
 #-WATERSHED END
             ### - INDIVIDUAL PROCESS OR BATCH ITERATION - ###
             current_input_list_list = list(input_list_list)
-            if not current_input_list_list:
+            
+            if not len(input_list_list) > 1:
                 self.L.print_title("SINGLE POINT ANALYSIS")
                 run_list = input_list + [save_folder, forecast_enabled]
                 self.L.Wrap('Running: '+str(run_list))
                 result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(run_list, watershed_analysis=False, all_sampling_coordinates=None)
                 if result_pdf is not None:
+                    # Open folder containing outputs
+                    output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
+                    subprocess.Popen('explorer "{}"'.format(output_folder))
                     # Open PDF in new process
                     self.L.Wrap('Opening PDF in a new process...')
                     subprocess.Popen(result_pdf, shell=True)
@@ -1217,7 +1215,7 @@ class Main(object):
                 if radio == 'Rain':
                     if watershed_scale == 'Single Point':
                         watershed_analysis = False
-                        output_folder = '{}\\Antecedent\\Rainfall\\{}, {}'.format(save_folder, input_list[1], input_list[2])
+                        output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
                         # Define PDF Outputs
                         final_path_variable = '{}\\({}, {}) Batch Result.pdf'.format(output_folder,
                                                                                      latitude,
@@ -1231,7 +1229,7 @@ class Main(object):
                                                                           longitude)
                     elif watershed_scale == 'Custom Polygon':
                         watershed_analysis = True
-                        output_folder = '{}\\Antecedent\\Rainfall\\~Watershed\\{}\\{}'.format(save_folder, watershed_scale, custom_watershed_name)
+                        output_folder = '{}\\{}\\~Watershed\\{}\\{}'.format(save_folder, VERSION_FOR_PATHS, watershed_scale, custom_watershed_name)
                         watershed_analysis = True
                         # Define PDF Outputs
                         final_path_variable = '{}\\{} - {} - Batch Result.pdf'.format(output_folder,
@@ -1248,7 +1246,7 @@ class Main(object):
                                                                                observation_date,
                                                                                custom_watershed_name)
                     else:
-                        output_folder = '{}\\Antecedent\\Rainfall\\~Watershed\\{}\\{}'.format(save_folder, watershed_scale, huc)
+                        output_folder = '{}\\{}\\~Watershed\\{}\\{}'.format(save_folder, VERSION_FOR_PATHS, watershed_scale, huc)
                         watershed_analysis = True
                         # Define PDF Outputs
                         final_path_variable = '{}\\{} - HUC {} - Batch Result.pdf'.format(output_folder,
@@ -1266,7 +1264,7 @@ class Main(object):
                                                                                huc)
                 elif radio == 'Snow':
                     watershed_analysis = False
-                    output_folder = '{}\\Antecedent\\Snowfall\\{}, {}'.format(save_folder, input_list[1], input_list[2])
+                    output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
                     # Define PDF Outputs
                     final_path_variable = '{}\\({}, {}) Batch Result.pdf'.format(output_folder,
                                                                                  latitude,
@@ -1280,7 +1278,7 @@ class Main(object):
                                                                       longitude)
                 elif radio == 'Snow Depth':
                     watershed_analysis = False
-                    output_folder = '{}\\Antecedent\\Snow Depth\\{}, {}'.format(save_folder, input_list[1], input_list[2])
+                    output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
                     # Define PDF Outputs
                     final_path_variable = '{}\\({}, {}) Batch Result.pdf'.format(output_folder,
                                                                                  latitude,
@@ -1360,34 +1358,36 @@ class Main(object):
                             all_items = current_input_list + [palmer_value, palmer_class, wet_dry_season, condition, ante_score]
                             if watershed_scale == 'Single Point':
                                 # Write results to CSV
-                                csv_writer.Wrap('{},{},{}-{}-{},{},{},{},{},{} Season,{},{}'.format(current_input_list[1], # Latitude
-                                                                                                    current_input_list[2], # Longitude
-                                                                                                    all_items[3], # Observation Year
-                                                                                                    all_items[4], # Observation Month
-                                                                                                    all_items[5], # Observation Day
-                                                                                                    all_items[6], # Image Name
-                                                                                                    all_items[7], # Image Source
-                                                                                                    all_items[10], # PDSI Value
-                                                                                                    all_items[11], # PDSI Class
-                                                                                                    all_items[12], # Season
-                                                                                                    all_items[14], # ARC Score
-                                                                                                    all_items[13])) # Antecedent Precip Condition
+                                csv_writer.Wrap('{},{},{}-{}-{},{},{},{},{},{},{},{}'.format(current_input_list[1], # Latitude
+                                                                                             current_input_list[2], # Longitude
+                                                                                             all_items[3], # Observation Year
+                                                                                             all_items[4], # Observation Month
+                                                                                             all_items[5], # Observation Day
+                                                                                             all_items[6], # Image Name
+                                                                                             all_items[7], # Image Source
+                                                                                             all_items[10], # PDSI Value
+                                                                                             all_items[11], # PDSI Class
+                                                                                             all_items[12], # Season
+                                                                                             all_items[14], # ARC Score
+                                                                                             all_items[13])) # Antecedent Precip Condition
                             else:
                                 watershed_results_list.append((ante_score, condition, wet_dry_season, palmer_class))
-                                csv_writer.Wrap('{},{},{}-{}-{},{},{},{} Season,{},{}'.format(current_input_list[1], # Latitude
-                                                                                              current_input_list[2], # Longitude
-                                                                                              all_items[3], # Observation Year
-                                                                                              all_items[4], # Observation Month
-                                                                                              all_items[5], # Observation Day
-                                                                                              all_items[10], # PDSI Value
-                                                                                              all_items[11], # PDSI Class
-                                                                                              all_items[12], # Season
-                                                                                              all_items[14], # ARC Score
-                                                                                              all_items[13])) # Antecedent Precip Condition
+                                csv_writer.Wrap('{},{},{}-{}-{},{},{},{},{},{}'.format(current_input_list[1], # Latitude
+                                                                                       current_input_list[2], # Longitude
+                                                                                       all_items[3], # Observation Year
+                                                                                       all_items[4], # Observation Month
+                                                                                       all_items[5], # Observation Day
+                                                                                       all_items[10], # PDSI Value
+                                                                                       all_items[11], # PDSI Class
+                                                                                       all_items[12], # Season
+                                                                                       all_items[14], # ARC Score
+                                                                                       all_items[13])) # Antecedent Precip Condition
                         else:
                             # Open PDF in new process
                             self.L.Wrap('Opening PDF in a new process...')
                             subprocess.Popen(result_pdf, shell=True)
+                            # Open Output Folder
+                            subprocess.Popen('explorer "{}"'.format(output_folder))
                 if watershed_scale != 'Single Point':
                     if watershed_scale == 'Custom Polygon':
                         huc = custom_watershed_name
@@ -1486,24 +1486,33 @@ class Main(object):
     # End calculate_or_add_batch function
 
 
-class DateEntry(tkinter.ttk.Frame):
+class DateEntry(tkinter.Frame):
     """Date entry box"""
     def __init__(self, master, frame_look={}, **look):
+        self.recheck = False
         args = dict(relief=tkinter.SUNKEN, border=1)
         args.update(frame_look)
         tkinter.Frame.__init__(self, master, **args)
 
         args.update(look)
-    
+
+        self.ignore_key_list = ['Shift_L', 'Shift_R', 'Left', 'Right']
+
+        self.year_testable = False
+        self.month_testable = False
+        self.day_testable = False
+
+        self.two_days_prior_datetime = datetime.datetime.today() - datetime.timedelta(days=2)
+        self.two_days_prior_string = self.two_days_prior_datetime.strftime('%Y-%m-%d')
+        self.two_days_prior_year = int(self.two_days_prior_datetime.strftime('%Y'))
+
         #---SEPARATOR STYLE---#
         self.line_style = tkinter.ttk.Style()
         self.line_style.configure("Line.TSeparator", background="#000000")
 
         self.entry_year = tkinter.ttk.Entry(self, width=4)
-#        self.label_yr_mo = tkinter.ttk.Label(self, text='-')
         self.label_yr_mo = tkinter.ttk.Separator(self, orient="horizontal", style="Line.TSeparator")
         self.entry_month = tkinter.ttk.Entry(self, width=2)
-#        self.label_mo_dd = tkinter.ttk.Label(self, text='-')
         self.label_mo_dd = tkinter.ttk.Separator(self, orient="horizontal", style="Line.TSeparator")
         self.entry_day = tkinter.ttk.Entry(self, width=2)
 
@@ -1518,40 +1527,185 @@ class DateEntry(tkinter.ttk.Frame):
         self.entry_day.bind('<KeyRelease>', self.entry_day_check)
 
     def _backspace(self, entry):
-        cont = entry.get()
+        entry_text = entry.get()
         entry.delete(0, 'end')
-        entry.insert(0, cont[:-1])
+        entry.insert(0, entry_text[:-1])
+        self._test_date()
+
+    def _test_date(self):
+        self.date_problem = False
+        year = self._year_eval()
+        month = self._month_eval()
+        day = self._day_eval()
+        if self.year_testable and self.month_testable and self.day_testable:
+            # Test for actual date
+            try:
+                # RECTIFY INPUTS
+                if len(str(day)) == 1:
+                    day = '0'+str(day)
+                else:
+                    day = str(day)
+                if len(str(month)) == 1:
+                    month = '0'+str(month)
+                else:
+                    month = str(month)
+                date_string = str(year)+'-'+month+'-'+day
+                entry_datetime = datetime.datetime.strptime(date_string, '%Y-%m-%d')
+                # Ensure date is no later than 2 days prior to current date
+                if entry_datetime > self.two_days_prior_datetime:
+                    print('')
+                    print('INPUT ERROR - GHCN Data is two days old - Please change to: ({})'.format(self.two_days_prior_string))
+                    self.date_problem = True
+            except Exception as error:
+                self.date_problem = True
+                print('')
+                print('{}!'.format(str(error).upper()))
+        if self.year_problem:
+            self.config({"background":"red"})
+        elif self.month_problem:
+            self.config({"background":"red"})
+        elif self.day_problem:
+            self.config({"background":"red"})
+        elif self.date_problem:
+            self.config({"background":"red"})
+        else:
+            self.config({"background":"white"})
+
+    def _year_eval(self):
+        self.year_problem = False
+        entry_text = self.entry_year.get()
+        if len(entry_text) > 3:
+            int_year = int(entry_text)
+            if int_year < 1910:
+                self.year_problem = True
+                print(' ')
+                print('Year cannot be less than 1910!')
+            elif int_year > self.two_days_prior_year:
+                self.year_problem = True
+                print(' ')
+                print('Year cannot be greater than {}!'.format(self.two_days_prior_year))
+        return entry_text
+    
+    def _month_eval(self):
+        self.month_problem = False
+        entry_text = self.entry_month.get()
+        if len(entry_text) > 0:
+            int_month = int(entry_text)
+            if int_month > 12:
+                self.month_problem = True
+                print(' ')
+                print('Month cannot be more than 12!')
+        return entry_text
+    
+    def _day_eval(self):
+        self.day_problem = False
+        entry_text = self.entry_day.get()
+        if len(entry_text) > 1:
+            int_day = int(entry_text)
+            if int_day > 31:
+                self.day_problem = True
+                print('')
+                print('Day cannot be more than 31!')
+        return entry_text
+    
 
     def _entry_year_check(self, e):
-        cont = self.entry_year.get()
-        if len(cont) == 0:
+        self.year_testable = True
+        self.year_problem = False
+        entry_text = self.entry_year.get()
+        if len(entry_text) == 0:
             return
-        if len(cont) >= 4:
-            self.entry_month.focus()
-        if len(cont) > 4 or not cont[-1].isdigit():
+        # Deal with non-numeric characters
+        try:
+            if not entry_text[-1].isdigit():
+                self._backspace(self.entry_year)
+        except Exception:
+            pass
+        if len(entry_text) > 4:
             self._backspace(self.entry_year)
-            self.entry_year.focus()
+            self.entry_month.focus()
+            self.year_testable = True
+        if len(entry_text) > 3:
+            if e.keysym == 'Left':
+                pass
+            elif e.keysym == 'Right':
+                if self.entry_year.index(tkinter.INSERT) > 3:
+                    self.entry_month.focus()
+                    self.year_testable = True
+            else:
+                self.entry_month.focus()
+                self.year_testable = True
+        if not e.keysym in self.ignore_key_list:
+            self.year_testable = True
+        if self.year_testable:
+            self._test_date()
+
 
     def _entry_month_check(self, e):
-        cont = self.entry_month.get()
-        if len(cont) == 0:
+        self.month_testable = False
+        entry_text = self.entry_month.get()
+        if len(entry_text) == 0:
+            if e.keysym == 'Left':
+                if self.entry_month.index(tkinter.INSERT) < 1:
+                    self.entry_year.focus()
+            if e.keysym == 'BackSpace':
+                if self.entry_month.index(tkinter.INSERT) < 1:
+                    self.entry_year.focus()
             return
-        if len(cont) >= 2:
-            self.entry_day.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
+        # Overwriting
+        if len(entry_text) > 2:
             self._backspace(self.entry_month)
-            self.entry_month.focus()
+            self.entry_day.focus()
+            self.month_testable = True
+        # Non-digits
+        if not entry_text[-1].isdigit():
+            self._backspace(self.entry_month)
+        if e.keysym == 'Left':
+            if self.entry_month.index(tkinter.INSERT) < 1:
+                self.entry_year.focus()
+                self.entry_year.icursor(4)
+                self.month_testable = True
+        if len(entry_text) > 1:
+            self.entry_day.focus()
+            self.month_testable = True
+        if not e.keysym in self.ignore_key_list:
+            self.month_testable = True
+        if self.month_testable:
+            self._test_date()
+
 
     def entry_day_check(self, e):
-        cont = self.entry_day.get()
-        if len(cont) == 0:
+        self.day_testable = False
+        entry_text = self.entry_day.get()
+        if len(entry_text) == 0:
+            if e.keysym == 'Left':
+                if self.entry_day.index(tkinter.INSERT) < 1:
+                    self.entry_month.focus()
+            if e.keysym == 'BackSpace':
+                if self.entry_day.index(tkinter.INSERT) < 1:
+                    self.entry_month.focus()
             return
-        if len(cont) > 2 or not cont[-1].isdigit():
+        # Overwriting
+        if len(entry_text) > 2:
             self._backspace(self.entry_day)
+            self.day_testable = True
+        # Non-Digits
+        if not entry_text[-1].isdigit():
+            self._backspace(self.entry_day)
+        # Jumping Left
+        if e.keysym == 'Left':
+            if self.entry_day.index(tkinter.INSERT) < 1:
+                self.entry_month.focus()
+                self.day_testable = True
+        if not e.keysym in self.ignore_key_list:
+            self.day_testable = True
+        if self.day_testable:
+            self._test_date()
+
 
     def get(self):
-        return self.entry_year.get(), self.entry_month.get(), self.entry_day.get() 
-    
+        return self.entry_year.get(), self.entry_month.get(), self.entry_day.get()
+
     def set(self, year, month, day):
         self.entry_year.delete(0, 'end')
         self.entry_year.insert(0, year)

@@ -48,7 +48,6 @@ class Main(object):
     """GUI for the ULA of the  Antecedent Precipitation Tool"""
 
     def __init__(self):
-        self.ula_ccepted = False
         # Find Root Folder
         module_path = os.path.dirname(os.path.realpath(__file__))
         root_folder = os.path.split(module_path)[0]
@@ -63,7 +62,7 @@ class Main(object):
 
         # Set Window Icon
         try:
-            graph_icon_file = '{}\\GUI Images\\Graph.ico'.format(root_folder)
+            graph_icon_file = '{}\\images\\Graph.ico'.format(root_folder)
             self.master.wm_iconbitmap(graph_icon_file)
         except Exception:
             graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
@@ -130,18 +129,15 @@ class Main(object):
             self.button_accept.config(state='disabled')
 
     def click_accept_button(self):
-        self.ula_ccepted = False
         self.master.destroy() # Close ULA window
         get_all.main()
-        shortcut.create_shortcut_frozen() # Create Desktop Shortcut
         module_folder = os.path.dirname(os.path.realpath(__file__))
         root_folder = os.path.split(module_folder)[0]
-        main_exe_path = '"{}\\arc_ex.exe"'.format(root_folder)
+        main_exe_path = '"{}\\main_ex.exe"'.format(root_folder)
         subprocess.Popen(main_exe_path, shell=True)
         sys.exit()
 
     def click_cancel_button(self):
-        self.ula_ccepted = True
         self.master.destroy() # Close ULA window
         return False
 
