@@ -54,9 +54,9 @@ Basic Methodology for each determination
     - We then calculate the 30th and 70th percentile values for each day of the year
     - Now, when we compare the current year 30-day rolling total to the 30-year normal, we are directly comparing the same exact type of measurement, at the same resolution.
 
-- **Station Selection**
+## Station Selection
 
-**Manual Procedure**
+#### Manual Procedure
 
     - The original method required a PM to manually locate weather station data that they deemed most appropriate to use for their site, with a note that it should be relatively close and at a similar elevation.
     - No real parameters were provided for when a station is too far, or how you can be sure there is not a closer station that you have overlooked.
