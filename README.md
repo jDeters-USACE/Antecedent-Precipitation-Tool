@@ -1,4 +1,4 @@
-# Antecedent Rainfall Calculator
+# Antecedent Precipitation Tool (APT)
 ## Where can I get it?
 Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/latest)
 
