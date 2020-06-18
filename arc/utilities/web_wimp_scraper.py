@@ -497,7 +497,7 @@ def get_season_from_rows(rows, month=None):
         def_val_three = make_length(def_val, 3)
         # Save selected month value, if provided
         if num == month:
-            selected_season = season
+            selected_season = '{} Season'.format(season)
             # Write the current Table row AND Selected Month Marker
             log.Wrap('  | {} | {} | {} | {} | {} Season | <---Selected Month'.format(mon, diff_four, dst_four, def_val_three, season))
         else:

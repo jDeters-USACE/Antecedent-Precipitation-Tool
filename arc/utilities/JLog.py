@@ -357,7 +357,7 @@ class PrintLog(object):
                 self.terminal_size_y = sizey = bottom - top + 1
             self.print_length = self.terminal_size_x - 1
         except:
-            self.print_length = 80
+            self.print_length = 119
         return
 # End of PrintLog Class
 
