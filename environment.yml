@@ -6,4 +6,5 @@ dependencies:
   - matplotlib
   - PyPDF2
   - geopy
+  - ogr
   - ulmo=0.8.4
