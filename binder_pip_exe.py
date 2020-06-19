@@ -108,11 +108,11 @@ class cmdString(object):
 # end of cmdString class
 
 # Function definitions
-def usepip(name,pypath,packagePath,extraCMD=None):
+def usepip(name,packagePath,extraCMD=None):
     print(' ')
     print('Installing '+name+'...')
     e = cmdString()
-    e.AddStringInQuotes(pypath)
+    e.AddStringInQuotes(sys.executable)
     e.AddString('-m')
     e.AddString('pip')
     e.AddString('install')
