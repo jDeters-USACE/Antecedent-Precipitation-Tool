@@ -1,7 +1,6 @@
 # Antecedent Precipitation Tool (APT)
 ## Where can I get it?
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jDeters-USACE/Antecedent-Precipitation-Tool/Juno?filepath=https%3A%2F%2Fgithub.com%2FjDeters-USACE%2FAntecedent-Precipitation-Tool%2Fblob%2FJuno%2Fapt.ipynb)
-Copy markdown link to clipboard
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jDeters-USACE/Antecedent-Precipitation-Tool/Juno)
 
 Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/latest)
 
