@@ -11,6 +11,7 @@
 channels:
   - conda-forge
   - defaults
+ channel_priority: flexible # or 'strict'
 
 # Show channel URLs when displaying what is going to be downloaded
 # and in 'conda list'. The default is False.
