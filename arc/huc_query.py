@@ -34,7 +34,8 @@ import random
 
 # Import 3rd Party Libraries
 import ogr
-ogr.UseExceptions()
+from osgeo import gdal
+gdal.UseExceptions()
 
 # Import Custom Libraries
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
