@@ -7,3 +7,4 @@ dependencies:
   - PyPDF2
   - geopy
   - ulmo=0.8.4
+  - gdal
