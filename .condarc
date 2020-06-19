@@ -9,7 +9,7 @@
 # (this can be changed by modifying the channel_alias key; see below).
 # The default is just 'defaults'.
 channels:
-  - r
+  - conda-forge
   - defaults
 
 # Show channel URLs when displaying what is going to be downloaded
