@@ -54,7 +54,6 @@ try:
     from . import check_usa
     from . import watershed_summary
     from . import help_window
-    from . import get_all
     from .utilities import JLog
 except Exception:
     import huc_query
@@ -62,7 +61,6 @@ except Exception:
     import check_usa
     import watershed_summary
     import help_window
-    import get_all
     TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
     if TEST:
         sys.path.append('{}\\Python Scripts'.format(ROOT))
