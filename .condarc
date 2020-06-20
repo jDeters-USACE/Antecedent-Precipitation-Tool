@@ -8,9 +8,9 @@
 # Non-url channels will be interpreted as Anaconda.org usernames
 # (this can be changed by modifying the channel_alias key; see below).
 # The default is just 'defaults'.
-channels:
-  - defaults
- channel_priority: strict # 'flexible' or 'strict'
+#channels:
+#  - defaults
+# channel_priority: strict # 'flexible' or 'strict'
 
 # Show channel URLs when displaying what is going to be downloaded
 # and in 'conda list'. The default is False.
