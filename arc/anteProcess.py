@@ -1684,5 +1684,7 @@ if __name__ == '__main__':
                   None,
                   SAVE_FOLDER,
                   False]
-    INSTANCE.setInputs(INPUT_LIST, watershed_analysis=False, all_sampling_coordinates=None)
+    INSTANCE.setInputs(INPUT_LIST,
+                       watershed_analysis=False,
+                       all_sampling_coordinates=None)
     raw_input('Stall for debugging.  Press enter or click X to close')
