@@ -44,11 +44,16 @@ try:
     from .utilities import JLog
     from .utilities import selenium_operations
 except Exception:
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Reverse compatibility step - Add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
     import selenium_operations
 

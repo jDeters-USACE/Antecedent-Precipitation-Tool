@@ -34,8 +34,7 @@ import random
 
 # Import 3rd Party Libraries
 import ogr
-from osgeo import gdal
-gdal.UseExceptions()
+ogr.UseExceptions()
 
 # Import Custom Libraries
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -44,12 +43,16 @@ try:
     from . import get_files
     from .utilities import JLog
 except Exception:
-    import get_files
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Reverse compatibility step - Add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 
@@ -93,25 +96,32 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     # Find ROOT folder
     root_folder = os.path.split(module_folder)[0]
     # Find WBD folder
-    wbd_folder = u'{}\\GIS\\WBD'.format(root_folder)
+    gis_folder = os.path.join(root_folder, 'GIS')
+    wbd_folder = os.path.join(gis_folder, 'WBD')
     # Set HUC_Scale-Specific Values
     if huc_digits == 2:
         # Find Selected WBD shapefile
-        shapefile = '{}\\HUC2.shp'.format(wbd_folder)
+        shapefile = os.path.join(wbd_folder, 'HUC2.shp')
         field_name = "HUC2"
     elif huc_digits == 8:
         # Calc Shapefile and Field
-        shapefile = u'{}\\GIS\\WBD\\{}\\Shape\\WBDHU{}.shp'.format(root_folder, str(base_huc)[:2], huc_digits)
+        base_huc_folder = os.path.join(wbd_folder, str(base_huc)[:2])
+        shape_folder = os.path.join(base_huc_folder, "Shape")
+        shapefile = os.path.join(shape_folder, 'WBDHU{}.shp'.format(huc_digits))
         field_name = "HUC{}".format(huc_digits)
     elif huc_digits == 10:
         # Calc Shapefile and Field
-        shapefile = u'{}\\GIS\\WBD\\{}\\Shape\\WBDHU{}.shp'.format(root_folder, str(base_huc)[:2], huc_digits)
+        base_huc_folder = os.path.join(wbd_folder, str(base_huc)[:2])
+        shape_folder = os.path.join(base_huc_folder, "Shape")
+        shapefile = os.path.join(shape_folder, 'WBDHU{}.shp'.format(huc_digits))
         field_name = "HUC{}".format(huc_digits)
         # Get attribute filter
         attribute_filter = "HUC10 LIKE '{}%'".format(base_huc)
     elif huc_digits == 12:
         # Find Selected WBD_Shapefile and 
-        shapefile = u'{}\\GIS\\WBD\\{}\\Shape\\WBDHU{}.shp'.format(root_folder, str(base_huc)[:2], huc_digits)
+        base_huc_folder = os.path.join(wbd_folder, str(base_huc)[:2])
+        shape_folder = os.path.join(base_huc_folder, "Shape")
+        shapefile = os.path.join(shape_folder, 'WBDHU{}.shp'.format(huc_digits))
         field_name = "HUC{}".format(huc_digits)
         # Get attrigbute filter
         attribute_filter = "HUC12 LIKE '{}%'".format(base_huc)
@@ -362,8 +372,10 @@ def get_huc2_package(huc2):
     file_url = 'https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/HU2/Shape/WBD_{}_HU2_Shape.zip'.format(huc2)
     module_folder = os.path.dirname(os.path.realpath(__file__))
     root_folder = os.path.split(module_folder)[0]
-    local_file_path = u'{}\\GIS\\WBD\\WBD_{}_HU2_Shape.zip'.format(root_folder, huc2)
-    extract_path = u'{}\\GIS\\WBD\\{}'.format(root_folder, huc2)
+    gis_folder = os.path.join(root_folder, 'GIS')
+    wbd_folder = os.path.join(gis_folder, 'WBD')
+    local_file_path = os.path.join(wbd_folder, 'WBD_{}_HU2_Shape.zip'.format(huc2))
+    extract_path = os.path.join(wbd_folder, huc2)
     # Download & Extract
     get_files.ensure_file_exists(file_url=file_url,
                                  local_file_path=local_file_path,
@@ -404,9 +416,10 @@ if __name__ == '__main__':
             # Find module path, ROOT folder, and SCRATCH folder
             MODULE_FOLDER = os.path.dirname(os.path.realpath(__file__))
             ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
-            SCRATCH_FOLDER = u'{}\\Scratch'.format(ROOT_FOLDER)
+            SCRATCH_FOLDER = os.path.join(ROOT_FOLDER, 'Scratch')
             ensure_dir(SCRATCH_FOLDER)
-            with open("{}\\{}points_test.csv".format(SCRATCH_FOLDER, HUC), 'w') as CSV:
+            scratch_csv = os.path.join(SCRATCH_FOLDER, '{}_points_test.csv'.format(HUC))
+            with open(scratch_csv, 'w') as CSV:
                 CSV.write('Lat,Lon\n')
                 for POINT in POINTS_ON_SURFACE:
                     CSV.write('{},{}\n'.format(POINT[0], POINT[1]))

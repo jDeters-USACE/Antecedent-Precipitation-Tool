@@ -78,8 +78,9 @@ if __name__ == '__main__':
     # Find ROOT folder
     ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
     # Find clim_div folder
-    CLIM_DIV_FOLDER = u'{}\\GIS\\climdiv'.format(ROOT_FOLDER)
-    CLIM_DIV_SHAPEFILE = '{}\\GIS.OFFICIAL_CLIM_DIVISIONS.shp'.format(CLIM_DIV_FOLDER)
+    GIS_FOLDER = os.path.join(ROOT_FOLDER, 'GIS')
+    CLIM_DIV_FOLDER = os.path.join(GIS_FOLDER, 'climdiv')
+    CLIM_DIV_SHAPEFILE = os.path.join(CLIM_DIV_FOLDER, 'GIS.OFFICIAL_CLIM_DIVISIONS.shp')
     FEATURE_ATTRIBUTE_TO_QUERY = "CLIMDIV"
     CLIMDIV = check(lat=36.5,
                     lon=-121.5,

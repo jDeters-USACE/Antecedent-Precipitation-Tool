@@ -14,18 +14,19 @@ try:
     from . import get_files
     from .utilities import JLog
 except Exception:
-    # Maintains compatability with previous non-compiled versions
+    #  Maintains compatibility with previous non-compiled versions
     import get_all
     import get_files
-    MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
-    ROOT = os.path.split(MODULE_PATH)[0]
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Reverse compatibility step - Add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts'.format(ROOT))
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc'.format(ROOT))
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 
@@ -74,10 +75,12 @@ class Main(object):
 
         # Set Window Icon
         try:
-            graph_icon_file = '{}\\images\\Graph.ico'.format(root_folder)
+            images_folder = os.path.join(root_folder, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
         except Exception:
-            graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
+            images_folder = os.path.join(sys.prefix, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
         
         #---GENERAL INFORMATION TEXT BOX---#
@@ -109,6 +112,7 @@ class Main(object):
         self.label_usage_single.grid(row=self.row, column=0, padx=0, pady=0, sticky="w", columnspan=1)
         self.row += 1
         # Create/Grid ITEMS for SINGLE POINT USAGE
+        docs_folder = os.path.join(root_folder, 'docs')
         self.add_reference(frame='Usage-Single',
                            title='How to read the output of a single-point analysis:',
                            pdf_local_path="",
@@ -116,7 +120,7 @@ class Main(object):
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for a given date:',
-                           pdf_local_path="{}\\help\\APT Walkthrough - Single Point - Single Date.pdf".format(root_folder),
+                           pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Single Point - Single Date.pdf'),
                            pdf_url="https://github.com/jDeters-USACE/Antecedent-Rainfall-Calculator/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Single%20Date.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',

@@ -40,12 +40,16 @@ try:
     # Frozen Application Method
     from .utilities import JLog
 except Exception:
-    # Development Environment Method
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Reverse compatibility method - add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 
@@ -57,7 +61,7 @@ def parse_version(version_file_path=None, version_url=None):
     If url is provided, Uses requests to check the first line of a text file at a URL
     """
     if not version_file_path is None:
-        version_file_path = '{}\\version'.format(ROOT)
+        version_file_path = os.path.join(ROOT, 'version')
         with open(version_file_path, 'r') as version_file:
             for line in version_file:
                 version_string = line.replace('\n','')

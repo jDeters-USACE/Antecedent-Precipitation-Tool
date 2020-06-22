@@ -34,9 +34,10 @@ ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
 
 def ensure_main_exe():
     # Calculate Paths
-    local_file_path = '{}\\main_ex.exe'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(ROOT_FOLDER, 'main_ex.exe')
     file_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/update/main_ex.exe'
-    local_version_file = '{}\\v\\main_ex'.format(ROOT_FOLDER)
+    version_folder = os.path.join(ROOT_FOLDER, 'v')
+    local_version_file = os.path.join(version_folder, 'main_ex')
     web_version_url = 'https://raw.githubusercontent.com/jDeters-USACE/Antecedent-Precipitation-Tool/master/v/main_ex'
     get_files.get_only_newer_version(file_url=file_url,
                                      local_file_path=local_file_path,
@@ -44,9 +45,10 @@ def ensure_main_exe():
                                      version_local_path=local_version_file)
 
 def ensure_antecdent_precipitation_tool_exe():
-    local_file_path = '{}\\Antecedent Precipitation Tool.exe'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(ROOT_FOLDER, 'Antecedent Precipitation Tool.exe')
     file_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/update/Antecedent%20Precipitation%20Tool.exe'
-    local_version_file = local_version_file = '{}\\v\\apt'.format(ROOT_FOLDER)
+    version_folder = os.path.join(ROOT_FOLDER, 'v')
+    local_version_file = os.path.join(version_folder, 'apt')
     web_version_url = 'https://raw.githubusercontent.com/jDeters-USACE/Antecedent-Precipitation-Tool/master/v/apt'
     get_files.get_only_newer_version(file_url=file_url,
                                      local_file_path=local_file_path,
@@ -55,28 +57,29 @@ def ensure_antecdent_precipitation_tool_exe():
 
 def ensure_images():
     """Ensure the existence of all items from the image folder"""
-    local_file_path = '{}\\images\\Graph.ico'.format(ROOT_FOLDER)
+    images_folder = os.path.join(ROOT_FOLDER, 'images')
+    local_file_path = os.path.join(images_folder, 'Graph.ico')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/Graph.ico',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\Minus.gif'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'Minus.gif')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/Minus.gif',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\Plus.gif'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'Plus.gif')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/Plus.gif',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\Question.gif'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'Question.gif')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/Question.gif',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\RD_1_0.png'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'RD_1_0.png')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/RD_1_0.png',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\Traverse_40%_503.gif'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'Traverse_40%_503.gif')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/Traverse_40%25_503.gif',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\Traverse_80%_1920.png'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'Traverse_80%_1920.png')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/Traverse_80%25_1920.png',
                                  local_file_path=local_file_path)
-    local_file_path = '{}\\images\\folder.gif'.format(ROOT_FOLDER)
+    local_file_path = os.path.join(images_folder, 'folder.gif')
     get_files.ensure_file_exists(file_url='https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/images/folder.gif',
                                  local_file_path=local_file_path)
 
