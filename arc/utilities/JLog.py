@@ -57,6 +57,7 @@ def deleteReadOnly(filePath):
         except WindowsError:
             pass
 
+
 #-------------------------------------Class Definitions-----------------------------------#
 
 # Define Local Variables
@@ -68,10 +69,13 @@ class PrintLog(object):
     """Handles the printing and logging of various types of inputs"""
     def __init__(self,
                  Delete=False,
-                 Log="{}\\Logs\\Antecedent_LOG.txt".format(ROOT_FOLDER),
+                 Log=None,
                  Indent=0,
                  Width=119,
                  LogOnly=False):
+        if Log is None:
+            log_folder = os.path.join(ROOT_FOLDER, 'Logs')
+            Log = os.path.join(log_folder, 'Antecedent_LOG.txt')
         self.Wrapper = textwrap.TextWrapper()
         self.Log = Log
         self.SetIndent(Indent)
@@ -112,7 +116,8 @@ class PrintLog(object):
         return
 
     def write_error_log(self):
-        error_log_path = "{}\\Logs\\Antecedent_LOG.txt".format(ROOT_FOLDER)
+        log_folder = os.path.join(ROOT_FOLDER, 'Logs')
+        error_log_path = os.path.join(log_folder, 'APT_Error_Log.txt')
         with open(error_log_path, 'w') as error_log:
             error_log.write(' \n')
             error_log.write('Please email this document to APT-Report-Issue@usace.army.mil to assist with your Error Report\n')

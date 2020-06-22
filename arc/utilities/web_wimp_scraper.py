@@ -324,7 +324,7 @@ class wimp_checker(object):
                         self.driver.switch_to.window(self.driver.window_handles[-1])
                         # Save a screenshot of the Water Balance Graph
                         log.Wrap('Getting Web Wimp Water Balance Graph screenshot...')
-                        web_wimp_screenshot_path = '{}\\Web WIMP Water Balance Graph.png'.format(output_folder)
+                        web_wimp_screenshot_path = os.path.join(output_folder, 'Web WIMP Water Balance Graph.png')
                         for numerator in range(10):
                             numerator += 1
                             # Test if screenshot exists
@@ -411,7 +411,7 @@ def calculate_wet_dry_table(wimp_rows, output_folder=None):
     log.Wrap('Parsing scraped WebWimp values and Calculating Wet/Dry Season...')
     # Attempt to create CSV PrintLog and write first line
     csv = False
-    csv_log_file = '{}\\WebWimp Values.csv'.format(output_folder)
+    csv_log_file = os.path.join(output_folder, 'WebWimp Values.csv')
     if output_folder is not None:
         csv_log = JLog.PrintLog(Delete=True,
                                 LogOnly=True,
@@ -445,7 +445,7 @@ def calculate_wet_dry_table(wimp_rows, output_folder=None):
 
 def read_values_from_csv(output_folder=None):
     """Read previously saved CSV of WebWIMP results table into a csv_rows list"""
-    csv_path = '{}\\WebWimp Values.csv'.format(output_folder)
+    csv_path = os.path.join(output_folder, 'WebWimp Values.csv')
     csv_exists = os.path.exists(csv_path)
     if not csv_exists:
         return 'No CSV'
@@ -526,8 +526,9 @@ class WimpScraper(object):
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
-        wimp_dict_pickle_path = '{}\\cached\\wimp_dict.pickle'.format(root_path)
-        pickle_lockfile = '{}\\cached\\wimp_dict.pickle.lock'.format(root_path)
+        pickle_folder = os.path.join(root_path, 'cached')
+        wimp_dict_pickle_path = os.path.join(pickle_folder, 'wimp_dict.pickle')
+        pickle_lockfile = os.path.join('wimp_dict.pickle.lock')
         while os.path.exists(pickle_lockfile):
             print('Waiting for pickle file to be free...')
             time.sleep(1)
@@ -561,7 +562,8 @@ class WimpScraper(object):
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
-        wimp_dict_pickle_path = '{}\\cached\\wimp_dict.pickle'.format(root_path)
+        pickle_folder = os.path.join(root_path, 'cached')
+        wimp_dict_pickle_path = os.path.join(pickle_folder, 'wimp_dict.pickle')
         wimp_dict_pickle_exists = os.path.exists(wimp_dict_pickle_path)
         if wimp_dict_pickle_exists:
             self.log.Wrap('Unserializing previously cached WebWIMP Dictionary..."')
@@ -583,7 +585,8 @@ class WimpScraper(object):
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
-        wimp_cache_folder = '{}\\cached\\WebWIMP'.format(root_path)
+        pickle_folder = os.path.join(root_path, 'cached')
+        wimp_cache_folder = os.path.join(pickle_folder, 'WebWIMP')
         # Iterate through points
         new_keys = 0
         num_points = len(point_list)
@@ -601,7 +604,7 @@ class WimpScraper(object):
                 scrape_coords = True
             if scrape_coords:
                 self.log.Wrap('{} of {}'.format(position, num_points))
-                coordinate_folder = '{}\\{}, {}'.format(wimp_cache_folder, lat, lon)
+                coordinate_folder = os.path.join(wimp_cache_folder, '{}, {}'.format(lat, lon))
                 self.rows = []
                 self.get_season(lat=lat,
                                 lon=lon,
@@ -740,7 +743,7 @@ class WimpScraper(object):
 if __name__ == '__main__':
     LAT = 71.3
     LON = -156.7
-    FOLDER = r'D:\Code\Python\WinPythonARC_2\cached\WebWIMP\71.3, -156.7'
+    FOLDER = r'D:\Code\Python\WinPythonARC_DEV\cached\WebWIMP\71.3, -156.7'
     WIMP_SCRAPER = WimpScraper()
     WIMP_SCRAPER.get_season(lat=30.442473,
                             lon=-90.268631,
@@ -750,50 +753,3 @@ if __name__ == '__main__':
                             lon=-90.268631,
                             month=11,
                             watershed_analysis=False)
-
-
-
-#    LAT = 39.30229
-#    LON = -120.11855
-#    LAT = 35.0941593
-#    LON = -80.6683517
-##    LAT = 38.5
-##    LON = -121.5
-#    LAT = 33
-#    LON = -80
-#
-#    # Based on Lat/Lon
-#    FOLDER = 'C:\\Users\\L2RCSJ9D\\Desktop\\Antecedent\\Rainfall\\{}, {}'.format(LAT, LON)
-#
-#    # Test scraper from scratch
-#    print('------------------------------------------------------------------')
-#    print('Testing new with no Existing Rows or CSV backup...')
-#    print('------------------------------------------------------------------')
-#    try:
-#        os.makedirs(FOLDER)
-#    except WindowsError:
-#        pass
-#    CSV_PATH = '{}\\WebWimp Values.csv'.format(FOLDER)
-#    EXISTS = os.path.exists(FOLDER)
-#    if EXISTS:
-#        try:
-#            os.remove(CSV_PATH)
-#        except Exception:
-#            pass
-#    WIMP_SCRAPER = WimpScraper()
-#    WIMP_SCRAPER.get_season(lat=LAT,
-#                            lon=LON,
-#                            month=4,
-#                            output_folder=FOLDER)
-#
-#    # Test CSV Reader Function
-#    print('')
-#    print('------------------------------------------------------------------')
-#    print('Testing requesting a new month with a fresh instance but saved CSV')
-#    print('------------------------------------------------------------------')
-#    WIMP_SCRAPER = WimpScraper()
-#    WIMP_SCRAPER.get_season(lat=LAT,
-#                            lon=LON,
-#                            month=10,
-#                            output_folder=FOLDER)
-#
