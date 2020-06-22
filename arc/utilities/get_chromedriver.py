@@ -44,7 +44,10 @@ import stat
 import zipfile
 import requests
 import urllib3
-from win32api import GetFileVersionInfo, LOWORD, HIWORD
+try:
+    from win32api import GetFileVersionInfo, LOWORD, HIWORD
+except:
+    pass
 
 # Import Custom Libraries
 try:
