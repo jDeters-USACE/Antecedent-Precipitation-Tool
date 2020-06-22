@@ -18,11 +18,11 @@ except Exception:
     import get_all
     import get_files
     # Reverse compatibility step - Add utilities folder to path directly
-# Find module path
-MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
-# Find ROOT folder
-ROOT = os.path.split(MODULE_PATH)[0]
-PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    # Find module path
+    MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
+    # Find ROOT folder
+    ROOT = os.path.split(MODULE_PATH)[0]
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
     TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
         UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
