@@ -1,22 +1,38 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
 
 ######################################
 ##  ------------------------------- ##
 ##       web_wimp_scraper.py        ##
 ##  ------------------------------- ##
-##      Copyright: Jason Deters     ##
+##      Writen by: Jason Deters     ##
 ##  ------------------------------- ##
 ##    Last Edited on:  2020-05-27   ##
 ##  ------------------------------- ##
@@ -324,7 +340,7 @@ class wimp_checker(object):
                         self.driver.switch_to.window(self.driver.window_handles[-1])
                         # Save a screenshot of the Water Balance Graph
                         log.Wrap('Getting Web Wimp Water Balance Graph screenshot...')
-                        web_wimp_screenshot_path = '{}\\Web WIMP Water Balance Graph.png'.format(output_folder)
+                        web_wimp_screenshot_path = os.path.join(output_folder, 'Web WIMP Water Balance Graph.png')
                         for numerator in range(10):
                             numerator += 1
                             # Test if screenshot exists
@@ -411,7 +427,7 @@ def calculate_wet_dry_table(wimp_rows, output_folder=None):
     log.Wrap('Parsing scraped WebWimp values and Calculating Wet/Dry Season...')
     # Attempt to create CSV PrintLog and write first line
     csv = False
-    csv_log_file = '{}\\WebWimp Values.csv'.format(output_folder)
+    csv_log_file = os.path.join(output_folder, 'WebWimp Values.csv')
     if output_folder is not None:
         csv_log = JLog.PrintLog(Delete=True,
                                 LogOnly=True,
@@ -445,7 +461,7 @@ def calculate_wet_dry_table(wimp_rows, output_folder=None):
 
 def read_values_from_csv(output_folder=None):
     """Read previously saved CSV of WebWIMP results table into a csv_rows list"""
-    csv_path = '{}\\WebWimp Values.csv'.format(output_folder)
+    csv_path = os.path.join(output_folder, 'WebWimp Values.csv')
     csv_exists = os.path.exists(csv_path)
     if not csv_exists:
         return 'No CSV'
@@ -526,8 +542,9 @@ class WimpScraper(object):
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
-        wimp_dict_pickle_path = '{}\\cached\\wimp_dict.pickle'.format(root_path)
-        pickle_lockfile = '{}\\cached\\wimp_dict.pickle.lock'.format(root_path)
+        pickle_folder = os.path.join(root_path, 'cached')
+        wimp_dict_pickle_path = os.path.join(pickle_folder, 'wimp_dict.pickle')
+        pickle_lockfile = os.path.join('wimp_dict.pickle.lock')
         while os.path.exists(pickle_lockfile):
             print('Waiting for pickle file to be free...')
             time.sleep(1)
@@ -561,7 +578,8 @@ class WimpScraper(object):
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
-        wimp_dict_pickle_path = '{}\\cached\\wimp_dict.pickle'.format(root_path)
+        pickle_folder = os.path.join(root_path, 'cached')
+        wimp_dict_pickle_path = os.path.join(pickle_folder, 'wimp_dict.pickle')
         wimp_dict_pickle_exists = os.path.exists(wimp_dict_pickle_path)
         if wimp_dict_pickle_exists:
             self.log.Wrap('Unserializing previously cached WebWIMP Dictionary..."')
@@ -583,7 +601,8 @@ class WimpScraper(object):
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
-        wimp_cache_folder = '{}\\cached\\WebWIMP'.format(root_path)
+        pickle_folder = os.path.join(root_path, 'cached')
+        wimp_cache_folder = os.path.join(pickle_folder, 'WebWIMP')
         # Iterate through points
         new_keys = 0
         num_points = len(point_list)
@@ -601,7 +620,7 @@ class WimpScraper(object):
                 scrape_coords = True
             if scrape_coords:
                 self.log.Wrap('{} of {}'.format(position, num_points))
-                coordinate_folder = '{}\\{}, {}'.format(wimp_cache_folder, lat, lon)
+                coordinate_folder = os.path.join(wimp_cache_folder, '{}, {}'.format(lat, lon))
                 self.rows = []
                 self.get_season(lat=lat,
                                 lon=lon,
@@ -738,9 +757,6 @@ class WimpScraper(object):
 
 
 if __name__ == '__main__':
-    LAT = 71.3
-    LON = -156.7
-    FOLDER = r'D:\Code\Python\WinPythonARC_2\cached\WebWIMP\71.3, -156.7'
     WIMP_SCRAPER = WimpScraper()
     WIMP_SCRAPER.get_season(lat=30.442473,
                             lon=-90.268631,
@@ -750,50 +766,3 @@ if __name__ == '__main__':
                             lon=-90.268631,
                             month=11,
                             watershed_analysis=False)
-
-
-
-#    LAT = 39.30229
-#    LON = -120.11855
-#    LAT = 35.0941593
-#    LON = -80.6683517
-##    LAT = 38.5
-##    LON = -121.5
-#    LAT = 33
-#    LON = -80
-#
-#    # Based on Lat/Lon
-#    FOLDER = 'C:\\Users\\L2RCSJ9D\\Desktop\\Antecedent\\Rainfall\\{}, {}'.format(LAT, LON)
-#
-#    # Test scraper from scratch
-#    print('------------------------------------------------------------------')
-#    print('Testing new with no Existing Rows or CSV backup...')
-#    print('------------------------------------------------------------------')
-#    try:
-#        os.makedirs(FOLDER)
-#    except WindowsError:
-#        pass
-#    CSV_PATH = '{}\\WebWimp Values.csv'.format(FOLDER)
-#    EXISTS = os.path.exists(FOLDER)
-#    if EXISTS:
-#        try:
-#            os.remove(CSV_PATH)
-#        except Exception:
-#            pass
-#    WIMP_SCRAPER = WimpScraper()
-#    WIMP_SCRAPER.get_season(lat=LAT,
-#                            lon=LON,
-#                            month=4,
-#                            output_folder=FOLDER)
-#
-#    # Test CSV Reader Function
-#    print('')
-#    print('------------------------------------------------------------------')
-#    print('Testing requesting a new month with a fresh instance but saved CSV')
-#    print('------------------------------------------------------------------')
-#    WIMP_SCRAPER = WimpScraper()
-#    WIMP_SCRAPER.get_season(lat=LAT,
-#                            lon=LON,
-#                            month=10,
-#                            output_folder=FOLDER)
-#
