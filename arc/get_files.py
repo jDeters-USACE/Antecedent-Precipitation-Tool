@@ -1,16 +1,32 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
 
 ######################################
 ##  ------------------------------- ##
@@ -18,7 +34,7 @@
 ##  ------------------------------- ##
 ##     Written by: Jason Deters     ##
 ##  ------------------------------- ##
-##    Last Edited on: 2020-06-11    ##
+##    Last Edited on: 2020-06-22    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -40,12 +56,16 @@ try:
     # Frozen Application Method
     from .utilities import JLog
 except Exception:
-    # Development Environment Method
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Reverse compatibility method - add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 
@@ -57,24 +77,31 @@ def parse_version(version_file_path=None, version_url=None):
     If url is provided, Uses requests to check the first line of a text file at a URL
     """
     if not version_file_path is None:
-        version_file_path = '{}\\version'.format(ROOT)
         with open(version_file_path, 'r') as version_file:
             for line in version_file:
                 version_string = line.replace('\n','')
                 version_list = version_string.split('.')
-                version_major = version_list[0]
-                version_minor = version_list[1]
-                version_patch = version_list[2]
+                version_major = int(version_list[0])
+                version_minor = int(version_list[1])
+                version_patch = int(version_list[2])
                 break
+        try:
+            version_string
+        except Exception:
+            # If the version file was blank for some reason
+            os.remove(version_file_path)
+            version_major = 0
+            version_minor = 0
+            version_patch = 0
     if not version_url is None:
         response = requests.get(version_url)
         time.sleep(.1)
         version_string = response.text.replace('\n','')
         version_list = version_string.split('.')
-        version_major = version_list[0]
-        version_minor = version_list[1]
-        version_patch = version_list[2]
-    return int(version_major), int(version_minor), int(version_patch)
+        version_major = int(version_list[0])
+        version_minor = int(version_list[1])
+        version_patch = int(version_list[2])
+    return version_major, version_minor, version_patch
 
 def extract_to_folder(zip_file, output_folder, pwd=None):
 #    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
@@ -175,7 +202,6 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
     local_version_patch = 0
     log = JLog.PrintLog()
     download_dir, file_name = os.path.split(local_file_path)
-    log.print_section('Checking for updates to {}'.format(file_name))
     # Check Web Version
     if version_url is not None:
         version_dir, version_name = os.path.split(version_local_path)
@@ -195,6 +221,7 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
                     if web_version_patch > local_version_patch:
                         download = True
     if download is True:
+        log.print_section('Checking for updates to {}'.format(file_name))
         log.Wrap('  Local version = {}.{}.{}'.format(local_version_major, local_version_minor, local_version_patch))
         log.Wrap('  Web version = {}.{}.{}'.format(web_version_major, web_version_minor, web_version_patch))
         # If web newer, delete local and set download to True

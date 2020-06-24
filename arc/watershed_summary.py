@@ -1,22 +1,39 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ######################################
 ##  ------------------------------- ##
 ##       watershed_summary.py       ##
 ##  ------------------------------- ##
-##      Copyright: Jason Deters     ##
+##      Writen by: Jason Deters     ##
 ##  ------------------------------- ##
 ##    Last Edited on: 2020-05-27    ##
 ##  ------------------------------- ##
@@ -185,12 +202,6 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     ax4 = plt.subplot2grid((20, 9), (12, 0), colspan=9, rowspan=9)
     ax5 = plt.subplot2grid((20, 18), (3, 11), colspan=4, rowspan=7)
 
-#    params = {"ytick.color" : "w",
-#              "xtick.color" : "w",
-#              "axes.labelcolor" : "w",
-#              "axes.edgecolor" : "w"}
-#    plt.rcParams.update(params)
-
     #pie_colors = [light_red, light_green, light_blue]
     patchyes, texts, autotexts = ax5.pie(pie_sizes,
                                          colors=pie_colors,
@@ -211,7 +222,8 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     import os
     MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
     ROOT = os.path.split(MODULE_PATH)[0]
-    logoFile = ROOT + "\\images\\Traverse_80%_1920.png"
+    images_folder = os.path.join(ROOT, 'images')
+    logoFile = os.path.join(images_folder, 'Traverse_80%_1920.png')
     logo = plt.imread(logoFile)
     img = fig.figimage(X=logo, xo=0, yo=0)
 

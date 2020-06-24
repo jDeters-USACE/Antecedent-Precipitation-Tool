@@ -1,16 +1,32 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
 
 ######################################
 ##  ------------------------------- ##
@@ -57,24 +73,31 @@ try:
     from . import get_all
     from .utilities import JLog
 except Exception:
+    # Old unfrozen version backwards compatibility step
     import huc_query
     import custom_watershed_query
     import check_usa
     import watershed_summary
     import help_window
     import get_all
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts'.format(ROOT))
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        sys.path.append(PYTHON_SCRIPTS_FOLDER)
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc'.format(ROOT))
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        sys.path.append(ARC_FOLDER)
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 
 # Version stuff
-VERSION_FILE_PATH = '{}\\version'.format(ROOT)
+get_all.ensure_version_file()
+VERSION_FILE_PATH = os.path.join(ROOT, 'version')
 with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
     for line in VERSION_FILE:
         VERSION_STRING = line.replace('\n','')
@@ -113,6 +136,10 @@ class Main(object):
         self.L = JLog.PrintLog(Delete=True)
         # Announce GUI
         self.L.Wrap("Launching Graphical User Interface...")
+        self.L.Wrap('')
+        self.L.Wrap('')
+        self.L.Wrap('Ready for Input!')
+        self.L.Wrap('')
 
         # Create UI Object
         self.master = tkinter.Tk()
@@ -138,17 +165,18 @@ class Main(object):
             waterfall_path = root_folder + '/images/Traverse_40%_503.gif'
             self.waterfall = tkinter.PhotoImage(file=waterfall_path)
         except Exception:
-            graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
+            images_folder = os.path.join(sys.prefix, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
-            folder_icon_path = os.path.join(sys.prefix, 'images\\folder.gif')
+            folder_icon_path = os.path.join(images_folder, 'folder.gif')
             self.folder_image = tkinter.PhotoImage(file=folder_icon_path)
-            plus_icon_path = os.path.join(sys.prefix, 'images\\Plus.gif')
+            plus_icon_path = os.path.join(images_folder, 'Plus.gif')
             self.PLUS_IMAGE = tkinter.PhotoImage(file=plus_icon_path)
-            minus_icon_path = os.path.join(sys.prefix, 'images\\Minus.gif')
+            minus_icon_path = os.path.join(images_folder, 'Minus.gif')
             self.minus_image = tkinter.PhotoImage(file=minus_icon_path)
-            question_icon_path = os.path.join(sys.prefix, 'images\\Question.gif')
+            question_icon_path = os.path.join(images_folder, 'Question.gif')
             self.question_image = tkinter.PhotoImage(file=question_icon_path)
-            waterfall_path = os.path.join(sys.prefix, 'images\\Traverse_40%_503.gif')
+            waterfall_path = os.path.join(images_folder, 'Traverse_40%_503.gif')
             self.waterfall = tkinter.PhotoImage(file=waterfall_path)
 
         self.background_label = tkinter.Label(self.master, image=self.waterfall)
@@ -236,10 +264,10 @@ class Main(object):
         self.ENTRY_CUSTOM_WATERSHED_FILE = tkinter.ttk.Entry(self.master)
         self.BUTTON_BROWSE_SHAPEFILE = tkinter.ttk.Button(self.master, text='Browse', command=self.ask_shapefile, image=self.folder_image)
 
-# REVERSE COMPATABILITY ITEMS (For the non-compiled version)
+# Reverse compatibility ITEMS (For the non-compiled version)
         self.BUTTON_BROWSE_DIR = tkinter.ttk.Button(self.master, text='Browse', command=self.ask_directory, image=self.folder_image)
         self.ENTRY_OUTPUT_FOLDER = tkinter.ttk.Entry(self.master)
-        default_save_folder = '{}\\Outputs'.format(ROOT) 
+        default_save_folder = os.path.join(ROOT,'Outputs') 
         self.ENTRY_OUTPUT_FOLDER.insert(0, default_save_folder)
         self.ENTRY_IMAGE_NAME = tkinter.ttk.Entry(self.master)
         self.ENTRY_IMAGE_SOURCE = tkinter.ttk.Entry(self.master)
@@ -258,7 +286,7 @@ class Main(object):
         self.RADIO_BUTTON_FORECAST_EXCLUDE = tkinter.ttk.Radiobutton(self.master, text="Don't Include Forecast", variable=self.RADIO_VARIABLE_FORECAST, value=False)
         self.STRING_VARIABLE_LABEL_FOR_SHOW_OPTIONS_BUTTON = tkinter.StringVar()
         self.STRING_VARIABLE_LABEL_FOR_SHOW_OPTIONS_BUTTON.set('Show Options')
-# REVERSE COMPATABILITY ITEMS (For the non-compiled version)
+# Reverse compatibility ITEMS (For the non-compiled version)
 
         # Create all elements and grid_forget then recreate starting style
         self.setup_unique_dates()
@@ -528,8 +556,8 @@ class Main(object):
         # Find module path, root folder, batch folder, batch template path
         module_path = os.path.dirname(os.path.realpath(__file__))
         root = os.path.split(module_path)[0]
-        batch_folder = '{}\\Batch'.format(root)
-        default_template_path = '{}\\APT Batch Template.csv'.format(batch_folder)
+        batch_folder = os.path.join(root, 'Batch')
+        default_template_path = os.path.join(batch_folder, 'APT Batch Template.csv')
         # Test for presence of Batch Template CSV
         template_exists = os.path.exists(default_template_path)
         if not template_exists:
@@ -547,8 +575,8 @@ class Main(object):
         # Find module path, root folder, batch folder, batch template path
         module_path = os.path.dirname(os.path.realpath(__file__))
         root = os.path.split(module_path)[0]
-        batch_folder = '{}\\Batch'.format(root)
-        default_template_path = '{}\\APT Batch Template.csv'.format(batch_folder)
+        batch_folder = os.path.join(root, 'Batch')
+        default_template_path = os.path.join(batch_folder, 'APT Batch Template.csv')
         # define options for opening a file
         file_opt = options = {}
         options['defaultextension'] = '.csv'
@@ -1186,22 +1214,20 @@ class Main(object):
                 result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(run_list, watershed_analysis=False, all_sampling_coordinates=None)
                 if result_pdf is not None:
                     # Open folder containing outputs
-                    output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
+                    version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
+                    coord_string = '{}, {}'.format(input_list[1], input_list[2])
+                    output_folder = os.path.join(version_folder, coord_string)
                     subprocess.Popen('explorer "{}"'.format(output_folder))
                     # Open PDF in new process
                     self.L.Wrap('Opening PDF in a new process...')
                     subprocess.Popen(result_pdf, shell=True)
                 del run_list
             else:
-#                if watershed_scale != "Single Point":
-#                    self.L.print_title("BATCH ANALYSIS ({} WATERSHED)".format(watershed_scale))
-#                else:
-#                    self.L.print_title("BATCH ANALYSIS (MANUAL CONFIGURATION)")
                 pdf_list = []
                 highest_y_max = 0
                 # Ensure batches are saved to a folder (Force Desktop if empty)
                 if save_folder is None:
-                    save_folder = '{}\\Outputs'.format(ROOT)
+                    save_folder = os.path.join(ROOT, 'Outputs')
                     self.L.Wrap('Setting Output Folder to default location: {}...'.format(save_folder))
                 # Test for common naming
                 img_event_name = current_input_list_list[0][6]
@@ -1215,81 +1241,61 @@ class Main(object):
                 if radio == 'Rain':
                     if watershed_scale == 'Single Point':
                         watershed_analysis = False
-                        output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
+                        version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
+                        coord_string = '{}, {}'.format(input_list[1], input_list[2])
+                        output_folder = os.path.join(version_folder, coord_string)
                         # Define PDF Outputs
-                        final_path_variable = '{}\\({}, {}) Batch Result.pdf'.format(output_folder,
-                                                                                     latitude,
-                                                                                     longitude)
-                        final_path_fixed = '{}\\({}, {}) Batch Result - Fixed.pdf'.format(output_folder,
-                                                                                          latitude,
-                                                                                          longitude)
+                        final_path_variable = os.path.join(output_folder, '({}, {}) Batch Result.pdf'.format(latitude, longitude))
+                        final_path_fixed = os.path.join(output_folder, '({}, {}) Batch Result - Fixed.pdf'.format(latitude, longitude))
                         # Define CSV Output
-                        csv_path = '{}\\({}, {}) Batch Result.csv'.format(output_folder,
-                                                                          latitude,
-                                                                          longitude)
+                        csv_path = os.path.join(output_folder, '({}, {}) Batch Result.csv'.format(latitude, longitude))
                     elif watershed_scale == 'Custom Polygon':
                         watershed_analysis = True
-                        output_folder = '{}\\{}\\~Watershed\\{}\\{}'.format(save_folder, VERSION_FOR_PATHS, watershed_scale, custom_watershed_name)
+                        version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
+                        general_watershed_folder = os.path.join(version_folder, '~Watershed')
+                        watershed_scale_folder = os.path.join(general_watershed_folder, watershed_scale)
+                        output_folder = os.path.join(watershed_scale_folder, custom_watershed_name)
                         watershed_analysis = True
                         # Define PDF Outputs
-                        final_path_variable = '{}\\{} - {} - Batch Result.pdf'.format(output_folder,
-                                                                                          observation_date,
-                                                                                          custom_watershed_name)
-                        watershed_summary_path = '{}\\{} - {} - Summary Page.pdf'.format(output_folder,
-                                                                                             observation_date,
-                                                                                             custom_watershed_name)
-                        final_path_fixed = '{}\\{} - {} - Batch Result - Fixed Scale.pdf'.format(output_folder,
-                                                                                                     observation_date,
-                                                                                                     custom_watershed_name)
+                        final_path_variable = os.path.join(output_folder, '{} - {} - Batch Result.pdf'.format(observation_date, custom_watershed_name))
+                        watershed_summary_path = os.path.join(output_folder, '{} - {} - Summary Page.pdf'.format(observation_date, custom_watershed_name))
+                        final_path_fixed = os.path.join(output_folder, '{} - {} - Batch Result - Fixed Scale.pdf'.format(observation_date, custom_watershed_name))
                         # Define CSV Output
-                        csv_path = '{}\\{} - {} - Batch Result.csv'.format(output_folder,
-                                                                               observation_date,
-                                                                               custom_watershed_name)
+                        csv_path = os.path.join(output_folder, '{} - {} - Sampling Results.csv'.format(observation_date, custom_watershed_name))
                     else:
-                        output_folder = '{}\\{}\\~Watershed\\{}\\{}'.format(save_folder, VERSION_FOR_PATHS, watershed_scale, huc)
+                        version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
+                        general_watershed_folder = os.path.join(version_folder, '~Watershed')
+                        watershed_scale_folder = os.path.join(general_watershed_folder, watershed_scale)
+                        output_folder = os.path.join(watershed_scale_folder, huc)
                         watershed_analysis = True
                         # Define PDF Outputs
-                        final_path_variable = '{}\\{} - HUC {} - Batch Result.pdf'.format(output_folder,
-                                                                                          observation_date,
-                                                                                          huc)
-                        watershed_summary_path = '{}\\{} - HUC {} - Summary Page.pdf'.format(output_folder,
-                                                                                             observation_date,
-                                                                                             huc)
-                        final_path_fixed = '{}\\{} - HUC {} - Batch Result - Fixed Scale.pdf'.format(output_folder,
-                                                                                                     observation_date,
-                                                                                                     huc)
+                        final_path_variable = os.path.join(output_folder, '{} - {} - Batch Result.pdf'.format(observation_date, huc))
+                        watershed_summary_path = os.path.join(output_folder, '{} - {} - Summary Page.pdf'.format(observation_date, huc))
+                        final_path_fixed = os.path.join(output_folder, '{} - {} - Batch Result - Fixed Scale.pdf'.format(observation_date, huc))
                         # Define CSV Output
-                        csv_path = '{}\\{} - HUC {} - Batch Result.csv'.format(output_folder,
-                                                                               observation_date,
-                                                                               huc)
+                        csv_path = os.path.join(output_folder, '{} - {} - Sampling Results.csv'.format(observation_date, huc))
                 elif radio == 'Snow':
                     watershed_analysis = False
-                    output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
+                    version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
+                    snow_folder = os.path.join(version_folder, 'Snowfall')
+                    coord_string = '{}, {}'.format(input_list[1], input_list[2])
+                    output_folder = os.path.join(snow_folder, coord_string)
                     # Define PDF Outputs
-                    final_path_variable = '{}\\({}, {}) Batch Result.pdf'.format(output_folder,
-                                                                                 latitude,
-                                                                                 longitude)
-                    final_path_fixed = '{}\\({}, {}) Batch Result - Fixed.pdf'.format(output_folder,
-                                                                                      latitude,
-                                                                                      longitude)
+                    final_path_variable = os.path.join(output_folder, '({}, {}) Batch Result.pdf'.format(latitude, longitude))
+                    final_path_fixed = os.path.join(output_folder, '({}, {}) Batch Result - Fixed.pdf'.format(latitude, longitude))
                     # Define CSV Output
-                    csv_path = '{}\\({}, {}) Batch Result.csv'.format(output_folder,
-                                                                      latitude,
-                                                                      longitude)
+                    csv_path = os.path.join(output_folder, '({}, {}) Batch Result.csv'.format(latitude, longitude))
                 elif radio == 'Snow Depth':
                     watershed_analysis = False
-                    output_folder = '{}\\{}\\{}, {}'.format(save_folder, VERSION_FOR_PATHS, input_list[1], input_list[2])
+                    version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
+                    snow_depth_folder = os.path.join(version_folder, 'Snow Depth')
+                    coord_string = '{}, {}'.format(input_list[1], input_list[2])
+                    output_folder = os.path.join(snow_depth_folder, coord_string)
                     # Define PDF Outputs
-                    final_path_variable = '{}\\({}, {}) Batch Result.pdf'.format(output_folder,
-                                                                                 latitude,
-                                                                                 longitude)
-                    final_path_fixed = '{}\\({}, {}) Batch Result - Fixed.pdf'.format(output_folder,
-                                                                                      latitude,
-                                                                                      longitude)
+                    final_path_variable = os.path.join(output_folder, '({}, {}) Batch Result.pdf'.format(latitude, longitude))
+                    final_path_fixed = os.path.join(output_folder, '({}, {}) Batch Result - Fixed.pdf'.format(latitude, longitude))
                     # Define CSV Output
-                    csv_path = '{}\\({}, {}) Batch Result.csv'.format(output_folder,
-                                                                      latitude,
-                                                                      longitude)
+                    csv_path = os.path.join(output_folder, '({}, {}) Batch Result.csv'.format(latitude, longitude))
                 # Add save_folder and Forecast setting to input lists
                 for count, specific_input_list in enumerate(current_input_list_list):
                     current_input_list_list[count] = specific_input_list + [save_folder, forecast_enabled]

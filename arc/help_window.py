@@ -1,3 +1,43 @@
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
+
+######################################
+##  ------------------------------- ##
+##          help_window.py          ##
+##  ------------------------------- ##
+##      Writen by: Jason Deters     ##
+##  ------------------------------- ##
+##    Last Edited on: 2020-06-22    ##
+##  ------------------------------- ##
+######################################
+
 import os
 import sys
 import tkinter
@@ -7,25 +47,27 @@ import time
 import subprocess
 import webbrowser
 
-
 # Custom Libraries
 try:
     from . import get_all
     from . import get_files
     from .utilities import JLog
 except Exception:
-    # Maintains compatability with previous non-compiled versions
+    #  Maintains compatibility with previous non-compiled versions
     import get_all
     import get_files
+    # Reverse compatibility step - Add utilities folder to path directly
     MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
-    ROOT = os.path.split(MODULE_PATH)[0]
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    ROOT = os.path.dirname(MODULE_PATH)
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts'.format(ROOT))
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc'.format(ROOT))
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 
@@ -74,10 +116,12 @@ class Main(object):
 
         # Set Window Icon
         try:
-            graph_icon_file = '{}\\images\\Graph.ico'.format(root_folder)
+            images_folder = os.path.join(root_folder, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
         except Exception:
-            graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
+            images_folder = os.path.join(sys.prefix, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
         
         #---GENERAL INFORMATION TEXT BOX---#
@@ -109,30 +153,31 @@ class Main(object):
         self.label_usage_single.grid(row=self.row, column=0, padx=0, pady=0, sticky="w", columnspan=1)
         self.row += 1
         # Create/Grid ITEMS for SINGLE POINT USAGE
+        docs_folder = os.path.join(root_folder, 'help')
         self.add_reference(frame='Usage-Single',
                            title='How to read the output of a single-point analysis:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Single-Point Analysis.pdf'),
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20-%20How%20to%20Read%20the%20Output%20of%20a%20Single-Point%20Analysis.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for a given date:',
-                           pdf_local_path="{}\\help\\APT Walkthrough - Single Point - Single Date.pdf".format(root_folder),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Rainfall-Calculator/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Single%20Date.pdf",
+                           pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Single Point - Single Date.pdf'),
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Rainfall-Calculator/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Single%20Date.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for several dates at once:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Multiple Dates.pdf"),
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Multiple%20Dates.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for many dates using a spreadsheet:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf"),
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Many%20Dates%20Using%20CSV%20Input.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
-                           title='How to generate a single-point analysis daily for a given starting and ending date:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           title='How to generate a single-point analysis at a daily frequency for a given date range:',
+                           pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Daily Frequency Date Range.pdf"),
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Daily%20Frequency%20Date%20Range.pdf",
                            youtube_url="")
         self.add_separator(self.central_buttons_frame)
 
@@ -148,8 +193,8 @@ class Main(object):
         # Create/Grid ITEMS for WATERSHED SCALE USAGE
         self.add_reference(frame='Usage-Watershed',
                            title='How to read the output of a Watershed analysis:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Watershed Analysis.pdf'),
+                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20-%20How%20to%20Read%20the%20Output%20of%20a%20Watershed%20Analysis.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using the USGS Watershed Boundary Dataset:',
@@ -234,6 +279,15 @@ class Main(object):
             def open_pdf_reference():
                 exists = os.path.exists(pdf_local_path)
                 if not exists:
+                    local_file_name = os.path.split(pdf_local_path)[1]
+                    local_file_name_no_ext = os.path.splitext(local_file_name)
+                    version_folder = os.path.join(ROOT, 'v')
+                    version_local_path = os.path.join(version_folder, version_local_path)
+                    version_url = 'https://raw.githubusercontent.com/jDeters-USACE/Antecedent-Precipitation-Tool/master/v/{}'.format(local_file_name_no_ext)
+                    get_files.get_only_newer_version(file_url=pdf_url,
+                                                     local_file_path=pdf_local_path,
+                                                     version_local_path=version_local_path,
+                                                     )
                     get_files.ensure_file_exists(file_url=pdf_url,
                                                  local_file_path=pdf_local_path)
                 pdf_name = os.path.split(pdf_local_path)[1]
@@ -261,7 +315,7 @@ class Main(object):
                 webbrowser.open(youtube_url, new=1, autoraise=True)
             # Asign function to new button
             if youtube_url == '':
-                youtube_text = "YouTube Demonstration (Coming Soon!)"
+                youtube_text = "YouTube Demo (Coming Soon!)"
             else:
                 youtube_text = 'YouTube Demonstration'
             youtube_button = ttk.Button(self.central_buttons_frame,

@@ -1,22 +1,38 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
 
 ######################################
 ##  ------------------------------- ##
 ##         anteProcess.py           ##
 ##  ------------------------------- ##
-##     Copyright: Jason Deters      ##
+##      Writen by: Jason Deters     ##
 ##  ------------------------------- ##
 ##    Last Edited on: 2020-05-27    ##
 ##  ------------------------------- ##
@@ -33,7 +49,7 @@ import warnings
 import pickle
 import stat
 
-# Get version
+# Get root folder
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.dirname(MODULE_PATH)
 
@@ -60,6 +76,7 @@ try:
     from . import getElev
     from . import station_manager
     from . import get_forecast
+    from . import get_all
     from .utilities import JLog
     from .utilities import web_wimp_scraper
 except Exception:
@@ -69,18 +86,26 @@ except Exception:
     import getElev
     import station_manager
     import get_forecast
-    # Directly add Utilities folder to facilitate imports
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    import get_all
+    # Add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        sys.path.append(PYTHON_SCRIPTS_FOLDER)
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        sys.path.append(ARC_FOLDER)
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
     import web_wimp_scraper
 
 
 # Version stuff
-VERSION_FILE_PATH = '{}\\version'.format(ROOT)
+get_all.ensure_version_file()
+VERSION_FILE_PATH = os.path.join(ROOT, 'version')
 with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
     for line in VERSION_FILE:
         VERSION_STRING = line.replace('\n','')
@@ -262,13 +287,13 @@ class Main(object):
 
         if not self.allStations:
             # Check for previously Cached Station Data from same day
-            pickle_folder = '{}\\cached'.format(ROOT)
+            pickle_folder = os.path.join(ROOT, 'cached')
             # Ensure pickle_folder exists
             try:
                 os.makedirs(pickle_folder)
             except Exception:
                 pass
-            pickle_path = '{}\\station_classes.pickle'.format(pickle_folder)
+            pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
             if self.data_type == 'PRCP':
                 self.log.Wrap('Checking for previously cached NCDC GHCN Weather Station Records...')
                 stations_pickle_exists = os.path.exists(pickle_path)
@@ -344,24 +369,32 @@ class Main(object):
         if self.save_folder is not None:
             # Create PDF output Folder
             if self.data_type == 'PRCP':
-                self.folderPath = '{}\\{}\\{}, {}'.format(self.save_folder,
-                                                          VERSION_FOR_PATHS,
-                                                          self.site_lat,
-                                                          self.site_long)
+                watershed_analysis = False
+                version_folder = os.path.join(self.save_folder, VERSION_FOR_PATHS)
+                coord_string = '{}, {}'.format(self.site_lat, self.site_long)
+                self.folderPath = os.path.join(version_folder, coord_string)
             if self.data_type == 'SNOW':
-                self.folderPath = self.save_folder + "\\Snowfall\\" + str(self.site_lat)+ ', ' + str(self.site_long)
+                watershed_analysis = False
+                version_folder = os.path.join(self.save_folder, VERSION_FOR_PATHS)
+                snow_folder = os.path.join(version_folder, 'Snowfall')
+                coord_string = '{}, {}'.format(self.site_lat, self.site_long)
+                self.folderPath = os.path.join(snow_folder, coord_string)
             if self.data_type == 'SNWD':
-                self.folderPath = self.save_folder + "\\Snow Depth\\" + str(self.site_lat)+ ', ' + str(self.site_long)
+                watershed_analysis = False
+                version_folder = os.path.join(self.save_folder, VERSION_FOR_PATHS)
+                snow_depth_folder = os.path.join(version_folder, 'Snow Depth')
+                coord_string = '{}, {}'.format(self.site_lat, self.site_long)
+                self.folderPath = os.path.join(snow_depth_folder, coord_string)
             folder_exists = os.path.exists(self.folderPath)
             if not folder_exists:
-                self.log.Wrap('Creating PDF output directory ({})...'.format(self.folderPath))
+                self.log.Wrap('Creating output directory ({})...'.format(self.folderPath))
                 # Ensure self.folderPath exists
                 try:
                     os.makedirs(self.folderPath)
                 except Exception:
                     pass
             # Create CSV output Folder
-            self.stationFolderPath = self.folderPath + "\\Station Data"
+            self.stationFolderPath = os.path.join(self.folderPath, "Station Data")
             folder_exists = os.path.exists(self.stationFolderPath)
             if not folder_exists:
                 self.log.Wrap('Creating stationData output directory ({})...'.format(self.stationFolderPath))
@@ -378,13 +411,13 @@ class Main(object):
 
         if self.ghcn_station_list is None:
             # Get DataFrame of all available Stations
-            pickle_folder = '{}\\cached'.format(ROOT)
+            pickle_folder = os.path.join(ROOT, 'cached')
             # Ensure pickle_folder exists
             try:
                 os.makedirs(pickle_folder)
             except Exception:
                 pass
-            pickle_path = '{}\\stations.pickle'.format(pickle_folder)
+            pickle_path = os.path.join(pickle_folder, 'stations.pickle')
             stations_pickle_exists = os.path.exists(pickle_path)
             if self.data_type == 'PRCP':
                 if stations_pickle_exists:
@@ -642,7 +675,7 @@ class Main(object):
                 # Discern avg. pace and approximate time remaining
                 if count_copy < enqueue_count:
                     timer_list.append([time.clock(), count_copy])
-                    if len(timer_list) > 80:
+                    if len(timer_list) > 20:
                         timer_list.remove(timer_list[0])
                     time_taken = time.clock() - timer_list[0][0]
                     tasks_complete = timer_list[0][1] - count_copy
@@ -659,7 +692,7 @@ class Main(object):
                 # Discern avg. pace and approximate time remaining
                 if count_copy < enqueue_count:
                     timer_list.append([time.clock(), count_copy])
-                    if len(timer_list) > 80:
+                    if len(timer_list) > 20:
                         timer_list.remove(timer_list[0])
                     time_taken = time.clock() - timer_list[0][0]
                     tasks_complete = timer_list[0][1] - count_copy
@@ -750,7 +783,8 @@ class Main(object):
         # Pickle All Stations for re-use the same day
         if self.data_type == 'PRCP':
             self.log.Wrap('Attempting to pickle Station Records for future use within 12 hours...')
-            pickle_path = '{}\\cached\\station_classes.pickle'.format(ROOT)
+            pickle_folder = os.path.join(ROOT, 'cached')
+            pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
             if os.path.exists(pickle_path) is True:
                 try:
                     os.remove(pickle_path)
@@ -897,10 +931,10 @@ class Main(object):
                     # SAVE RESULTS TO CSV IN OUTPUT DIRECTORY
                     if self.save_folder is not None:
                         # Generate output
-                        output_name = self.stationFolderPath + "\\" + best_station.name + ".csv"
-                        if os.path.isfile(output_name) is False:
+                        station_csv_path = os.path.join(self.stationFolderPath, '{}.csv'.format(best_station.name))
+                        if os.path.isfile(station_csv_path) is False:
                             self.log.Wrap('Saving station data to CSV in output folder...')
-                            best_station.Values.to_csv(output_name)
+                            best_station.Values.to_csv(station_csv_path)
             else:
                 self.log.Wrap("")
                 self.log.Wrap("No suitable station available to replace null values.")
@@ -969,10 +1003,10 @@ class Main(object):
         # SAVE finalDF TO CSV IN OUTPUT DIRECTORY
         if self.save_folder is not None:
             # Generate output
-            output_name = self.stationFolderPath + "\\" + "merged_stations.csv"
-            if os.path.isfile(output_name) is False:
+            merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations.csv")
+            if os.path.isfile(merged_stations_output_path) is False:
                 self.log.Wrap('Saving "merged_stations.csv" data to output folder...')
-                self.finalDF.to_csv(output_name)
+                self.finalDF.to_csv(merged_stations_output_path)
         # Converting to milimeters
         if self.data_type == 'PRCP':
 #            self.log.Wrap('Converting PRCP values to milimeters...')
@@ -994,10 +1028,10 @@ class Main(object):
         # Save converted finalDF to CSV in output directory
         if self.save_folder is not None:
             # Generate output
-            output_name = self.stationFolderPath + "\\" + "merged_stations_converted_to_{}.csv".format(units)
-            if os.path.isfile(output_name) is False:
+            converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{}.csv".format(units))
+            if os.path.isfile(converted_stations_output_path) is False:
                 self.log.Wrap('Saving "merged_stations_converted_to_mm.csv" data to output folder...')
-                self.finalDF.to_csv(output_name)
+                self.finalDF.to_csv(converted_stations_output_path)
         self.log.print_separator_line()
 
         # Calculate rolling 30 day sum for the DataFrame
@@ -1303,7 +1337,8 @@ class Main(object):
 
         # Pickle values for graph_test if in Dev environment
         if sys.executable == r'D:\Code\Python\WinPythonARC\WinPythonZero32\python-3.6.5\python.exe':
-            pickle_path = '{}\\cached\\graph_demo_data.pickle'.format(ROOT)
+            pickle_folder = os.path.join(ROOT, 'cached')
+            pickle_path = os.path.join(pickle_folder, 'graph_demo_data.pickle')
             pickle_list = [Dates,
                            rolling30day,
                            self.dates.graph_start_date,
@@ -1352,10 +1387,12 @@ class Main(object):
         #        ax4 = plt.subplot2grid((9, 10), (7, 3), colspan=7, rowspan=1)
             # Add Logo
             try:
-                logo_file = ROOT + "\\images\\RD_1_0.png"
+                images_folder = os.path.join(ROOT, 'images')
+                logo_file = os.path.join(images_folder, 'RD_1_0.png')
                 logo = plt.imread(logo_file)
             except:
-                logo_file = os.path.join(sys.prefix, 'images\\RD_1_0.png')
+                images_folder = os.path.join(sys.prefix, 'images')
+                logo_file = os.path.join(images_folder, 'RD_1_0.png')
                 logo = plt.imread(logo_file)
             img = fig.figimage(X=logo, xo=118, yo=20)
         else:
@@ -1626,9 +1663,9 @@ class Main(object):
         else:
             # Save PDF
             if self.image_name != "N/A":
-                imagePath = self.folderPath+"\\"+str(self.dates.observation_date)+'_'+self.image_name+'.pdf'
+                imagePath = os.path.join(self.folderPath, '{}_{}.pdf'.format(self.dates.observation_date, self.image_name))
             else:
-                imagePath = self.folderPath+"\\"+str(self.dates.observation_date)+'.pdf'
+                imagePath = os.path.join(self.folderPath, '{}.pdf'.format(self.dates.observation_date))
             self.log.Wrap('Saving ' + imagePath)
             fig.savefig(imagePath, facecolor='0.77')
 
@@ -1643,7 +1680,28 @@ class Main(object):
             return imagePath, yMax, ante_calc_result, score, wet_dry_season_result, palmer_value, palmer_class
 
 if __name__ == '__main__':
+    SAVE_FOLDER = os.path.join(ROOT, 'Output')
     INSTANCE = Main()
-    INSTANCE.setInputs(['PRCP', '38.5', '-121.5', 2020, '02', '02', None, None, 'd:\\Code\\Python\\WinPythonARC_dev_EPA\\Outputs','0'])
-#    INSTANCE.setInputs(['PRCP', 38.789972, -120.797499, 2018, 10, 15, "Test image name", "Test image source", r"C:\Users\L2RCSJ9D\Desktop", False])
+        # Input_List reference
+#        self.data_type = inputList[0]
+#        self.site_lat = inputList[1]
+#        self.site_long = inputList[2]
+#        year = inputList[3]
+#        month = inputList[4]
+#        day = inputList[5]
+#        self.image_name = inputList[6]
+#        self.image_source = inputList[7]
+#        self.SAVE_FOLDER = inputList[8]
+#        self.forecast_setting = inputList[9]
+    INPUT_LIST = ['PRCP',
+                  '38.5',
+                  '-121.5',
+                  2018,
+                  10,
+                  15,
+                  None,
+                  None,
+                  SAVE_FOLDER,
+                  False]
+    INSTANCE.setInputs(INPUT_LIST, watershed_analysis=False, all_sampling_coordinates=None)
     raw_input('Stall for debugging.  Press enter or click X to close')

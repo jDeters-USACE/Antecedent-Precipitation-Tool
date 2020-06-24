@@ -1,3 +1,34 @@
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
+
+
 import os
 import sys
 import tkinter
@@ -58,19 +89,21 @@ class Main(object):
         self.master.minsize(712, 440)
         self.master.maxsize(1370, 749)
         self.master.resizable(1, 1)
-        self.master.title("User Licence Agrement - Antecedent Precipitation Tool")
+        self.master.title("User Licence Agreement - Antecedent Precipitation Tool")
 
         # Set Window Icon
         try:
-            graph_icon_file = '{}\\images\\Graph.ico'.format(root_folder)
+            images_folder = os.path.join(root_folder, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
         except Exception:
-            graph_icon_file = os.path.join(sys.prefix, 'images\\Graph.ico')
+            images_folder = os.path.join(sys.prefix, 'images')
+            graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
 
 
         self.label_1=tkinter.ttk.Label(self.master,
-                               text="Please review and accept the user licence agrement to proceed",
+                               text="Please review and accept the user licence agreement to proceed",
                                font='Helvetica 12 bold')
         self.label_1.grid(row=0, column=0, padx=0, pady=0)
 
@@ -131,10 +164,35 @@ class Main(object):
     def click_accept_button(self):
         self.master.destroy() # Close ULA window
         get_all.main()
+        get_all.ensure_images()
+        get_all.ensure_wbd_folder()
+        get_all.ensure_us_shp_folder()
+        get_all.ensure_climdiv_folder()
+        get_all.ensure_WIMP()
+        get_all.ensure_binaries()
         module_folder = os.path.dirname(os.path.realpath(__file__))
         root_folder = os.path.split(module_folder)[0]
         main_exe_path = '"{}\\main_ex.exe"'.format(root_folder)
-        subprocess.Popen(main_exe_path, shell=True)
+        test = subprocess.Popen(main_exe_path, shell=True)
+        import time
+        time.sleep(2)
+        x = test.poll()
+        if x == 4294967295:
+            print('The APT is malfunctioning, likely due to a failed update.')
+            print('  Attempting to repair the directory...')
+            get_all.attempt_repair()
+            print('Repair package installed successfully.  Attempting to run main EXE again...')
+            test = subprocess.Popen(main_exe_path, shell=True)
+            import time
+            time.sleep(2)
+            x = test.poll()
+            if x == 4294967295:
+                print('Repair was unsuccessful.  Please email APT-Report-Issue@usace.army.mil')
+                print('  to apprise them of the current situation.  If you try the tool again')
+                print('  later, updates will likely have been made to correct the issue.')
+                time.sleep(1)
+                print('Closign in 5 seconds...')
+                time.sleep(5)
         sys.exit()
 
     def click_cancel_button(self):

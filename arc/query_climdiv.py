@@ -1,16 +1,33 @@
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ######################################
 ##  ------------------------------- ##
@@ -48,13 +65,17 @@ try:
     from . import query_shapefile_at_point
     from .utilities import JLog
 except Exception:
-    # Development Environment Method
     import query_shapefile_at_point
-    TEST = os.path.exists('{}\\Python Scripts'.format(ROOT))
+    # Reverse compatibility step - Add utilities folder to path directly
+    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
+    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
     if TEST:
-        sys.path.append('{}\\Python Scripts\\utilities'.format(ROOT))
+        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     else:
-        sys.path.append('{}\\arc\\utilities'.format(ROOT))
+        ARC_FOLDER = os.path.join(ROOT, 'arc')
+        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
+        sys.path.append(UTILITIES_FOLDER)
     import JLog
 
 log = JLog.PrintLog()
@@ -64,7 +85,8 @@ MODULE_FOLDER = os.path.dirname(os.path.realpath(__file__))
 # Find ROOT folder
 ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
 # Find clim_div folder
-CLIM_DIV_FOLDER = u'{}\\GIS\\climdiv'.format(ROOT_FOLDER)
+GIS_FOLDER = os.path.join(ROOT_FOLDER, 'GIS')
+CLIM_DIV_FOLDER = os.path.join(GIS_FOLDER, 'climdiv')
 
 
 def delete_read_only(file_path):
@@ -101,7 +123,7 @@ def ensure_current_pdsidv_file():
     today = datetime.datetime.today()
     this_month_proc_date = today.strftime('%Y%m04')
     this_month_file_name = 'climdiv-pdsidv-v1.0.0-{}'.format(this_month_proc_date)
-    current_file_path = '{}\\{}'.format(CLIM_DIV_FOLDER, this_month_file_name)
+    current_file_path = os.path.join(CLIM_DIV_FOLDER, this_month_file_name)
     if os.path.exists(current_file_path) is True:
         log.Wrap('    Local PDSI file found. Testing file...')
         pdsidv_file_size = os.path.getsize(current_file_path)
@@ -123,7 +145,7 @@ def ensure_current_pdsidv_file():
         response = http.request('GET', proc_date_url)
         proc_date = str(response.data.split(b"\n")[0], 'utf-8')
         current_file_name = 'climdiv-pdsidv-v1.0.0-{}'.format(str(proc_date))
-        current_file_path = '{}\\{}'.format(CLIM_DIV_FOLDER, current_file_name)
+        current_file_path = os.path.join(CLIM_DIV_FOLDER, current_file_name)
         log.Wrap('    Latest file = {}'.format(current_file_name))
         log.Wrap('  Checking for PDSI file on local drive...')
         if os.path.exists(current_file_path) is False:
@@ -168,13 +190,13 @@ def ensure_current_pdsidv_file():
                 if 'pdsidv' in file_name:
                     if not proc_date in file_name:
                         log.Wrap('Deleting {}...'.format(file_name))
-                        delete_path = '{}\\{}'.format(root, file_name)
+                        delete_path = os.path.join(root, file_name)
                         delete_read_only(delete_path)
     return current_file_path
 
 def get_clim_div(lat, lon):
     """Finds the NOAA Climate Division associated with a given Lat and Lon"""
-    clim_div_shapefile = '{}\\GIS.OFFICIAL_CLIM_DIVISIONS.shp'.format(CLIM_DIV_FOLDER)
+    clim_div_shapefile = os.path.join(CLIM_DIV_FOLDER, 'GIS.OFFICIAL_CLIM_DIVISIONS.shp')
     feature_attribute_to_query = "CLIMDIV"
     clim_div = query_shapefile_at_point.check(lat=lat,
                                               lon=lon,

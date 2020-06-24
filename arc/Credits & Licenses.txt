@@ -1,17 +1,68 @@
+#  This software was developed by United States Army Corps of Engineers (USACE)
+#  employees in the course of their official duties.  USACE used copyrighted,
+#  open source code to develop this software, as such this software 
+#  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
+#  portions of the software developed by USACE employees in the course of their
+#  official duties are not subject to copyright protection and are in the public
+#  domain.
+#  
+#  USACE assumes no responsibility whatsoever for the use of this software by
+#  other parties, and makes no guarantees, expressed or implied, about its
+#  quality, reliability, or any other characteristic. 
+#  
+#  The software is provided "as is," without warranty of any kind, express or
+#  implied, including but not limited to the warranties of merchantability,
+#  fitness for a particular purpose, and noninfringement.  In no event shall the
+#  authors or U.S. Government be liable for any claim, damages or other
+#  liability, whether in an action of contract, tort or otherwise, arising from,
+#  out of or in connection with the software or the use or other dealings in the
+#  software.
+#  
+#  Public domain portions of this software can be redistributed and/or modified
+#  freely, provided that any derivative works bear some notice that they are
+#  derived from it, and any modified versions bear some notice that they have
+#  been modified. 
+#  
+#  Copyrighted portions of the software are annotated within the source code.
+#  Open Source Licenses, included in the source code, apply to the applicable
+#  copyrighted portions.  Copyrighted portions of the software are not in the
+#  public domain.
+
 #########################################
 ##  ---------------------------------- ##
 ##  Credits and Licensing Information  ##
 ##  ---------------------------------- ##
 ##       Written by: Jason Deters      ##
 ##  ---------------------------------- ##
-##     Last Edited on: 2020-06-08      ##
+##     Last Edited on: 2020-06-24      ##
 ##  ---------------------------------- ##
 #########################################
 
-
-I did not expect to publish this package externally, but now that I am, I should
-document who made it possible and what their licensing terms are.
-
+This whole package was originally just a script I wrote so that I didn't have to perform
+the painstaking task of using web-browsers, excel sheets, and massive amounts of human labor 
+to follow USACE's old protocols for determining the normalcy of Antecedent Precipitation,
+as they were written in the April 2000 ERDC Technical Note by Sprecher and Warne and as 
+demonstrated for me by Mr. James Robb.  Jamie deserves much of the credit for this work,
+as he not only taught me the protocol the long and painful way, but he also put the idea of
+automating part of the process in my head in the first place.  As a biologist, with no training
+whatsoever in programming, I never expected this to be used by anyone other than Jamie and myself.
+Over time, the tool was shared with a few other interested parties, and through Jamie's legendary
+networking skills, it came to the attention to a great number of people.  I wrote the
+original version of this tool largely at home, on my personal time.  After all, who would pay
+a biologist to write code?  However, once the utility of this package became clear, I was
+eventually permitted to spend significant amounts of work time maintaining it.  Now that it
+has become a joint property with the U.S. Army Corps of Engineers, there has been no shortage
+of compromises (ahem, compulsary ULA acceptance every launch), but I will remain eternally
+grateful for the incredibe support the Corps and its management have provided me, especially
+with regard to the recent act of allowing me to spend a great deal of time improving ease of
+use and the clarity of the methodology for members of the public.  I apologize in advance to
+any career-programmers who may be harmed by the reading of this speghetti code, or its
+the comments for which alternate between excessive and absent.  I have a great deal of respect 
+for the profession, and I hope to one day join your ranks in earnest.  As it stands, I feel
+silly claiming to be the author of this software, as it, like many open-source Python
+projects, stands on the shoulders of giants.  With this in mind that I could not resit the
+urge to write this little message nor could I resist the urge to hide it in the open-source
+license document, where it will likely never be read by anyone.
 
 #########################################################
 ## - Ulmo - ## - Version 0.8.5 - ## - March 22, 2019 - ##
