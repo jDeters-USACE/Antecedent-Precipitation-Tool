@@ -869,7 +869,7 @@ class Main(object):
         num_stations_used = 0
         need_primary = True
         maxSearchDistance = 60      # Maximum distance between observation point and station location
-        maxNumberOfStations = 10    # Maximum number of stations to use to complete record
+        maxNumberOfStations = 20    # Maximum number of stations to use to complete record
         while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
             n += 1
             if n == 1:
