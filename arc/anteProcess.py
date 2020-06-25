@@ -483,7 +483,7 @@ class Main(object):
         multiprocessing.set_executable(executable)
         # Set number of Sub-processes based on CPU_Count
 #        num_minions = multiprocessing.cpu_count()
-        num_minions = 4 # > 4 resulted in many failed FTP downloads that succeeded in-line later
+        num_minions = 28 # > 4 resulted in many failed FTP downloads that succeeded in-line later
         # Establish communication queues
         self.log.Wrap("Establishing Communication Queues...")
         tasks_queue = multiprocessing.Queue()
