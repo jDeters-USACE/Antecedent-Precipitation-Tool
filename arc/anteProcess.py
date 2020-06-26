@@ -582,6 +582,8 @@ class Main(object):
                 ballpark = False
             elif row['longitude'] > max_lon:
                 ballpark = False
+            if self.searchDistance > 30:
+                ballpark = True
             if ballpark:
                 include_station = False
                 location_tuple = (row['latitude'], row['longitude'])
@@ -674,40 +676,39 @@ class Main(object):
                 count_copy -= 1
                 # Discern avg. pace and approximate time remaining
                 if count_copy < enqueue_count:
-                    timer_list.append([time.clock(), count_copy])
-                    if len(timer_list) > 20:
-                        timer_list.remove(timer_list[0])
-                    time_taken = time.clock() - timer_list[0][0]
-                    tasks_complete = timer_list[0][1] - count_copy
-                    seconds_per_task = time_taken/tasks_complete
-                    seconds_remaining = count_copy * seconds_per_task
-                    remaining_string = time2String(seconds_remaining)
-                    if count_copy < 2:
-                        msg = '{} station remaining.  Approximately {} remaining.'.format(count_copy, remaining_string)
-                    else:
-                        msg = '{} stations left.  Approximately {} remaining.'.format(count_copy, remaining_string)
-                    self.log.print_status_message(msg)
+                    try:
+                        timer_list.append([time.clock(), count_copy])
+                        if len(timer_list) > 20:
+                            timer_list.remove(timer_list[0])
+                        time_taken = time.clock() - timer_list[0][0]
+                        tasks_complete = timer_list[0][1] - count_copy
+                        seconds_per_task = time_taken/tasks_complete
+                        seconds_remaining = count_copy * seconds_per_task
+                        remaining_string = time2String(seconds_remaining)
+                        if count_copy < 2:
+                            msg = '{} station remaining.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                        else:
+                            msg = '{} stations left.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                        self.log.print_status_message(msg)
+                    except Exception:
+                        pass
             except Exception:
                 result = None
                 # Discern avg. pace and approximate time remaining
                 if count_copy < enqueue_count:
-                    timer_list.append([time.clock(), count_copy])
-                    if len(timer_list) > 20:
-                        timer_list.remove(timer_list[0])
-                    time_taken = time.clock() - timer_list[0][0]
-                    tasks_complete = timer_list[0][1] - count_copy
-                    seconds_per_task = time_taken/tasks_complete
-                    seconds_remaining = count_copy * seconds_per_task
-                    remaining_string = time2String(seconds_remaining)
-                    if count_copy < 2:
-                        msg = '{} station remaining.  Approximately {} remaining.'.format(count_copy, remaining_string)
-                        missing_spaces = " " * (119 - len(msg))
-                        msg = '{}{}'.format(msg, missing_spaces)
-                    else:
-                        msg = '{} stations left.  Approximately {} remaining.'.format(count_copy, remaining_string)
-                        missing_spaces = " " * (119 - len(msg))
-                        msg = '{}{}'.format(msg, missing_spaces)
-                    self.log.print_status_message(msg)
+                    try:
+                        time_taken = time.clock() - timer_list[0][0]
+                        tasks_complete = timer_list[0][1] - count_copy
+                        seconds_per_task = time_taken/tasks_complete
+                        seconds_remaining = count_copy * seconds_per_task
+                        remaining_string = time2String(seconds_remaining)
+                        if count_copy < 2:
+                            msg = '{} station remaining.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                        else:
+                            msg = '{} stations left.  Approximately {} remaining.'.format(count_copy, remaining_string)
+                        self.log.print_status_message(msg)
+                    except Exception:
+                        pass
                 time.sleep(1)
         # Add poison pill to queue so we can track when all processes are actually complete
             # This method is less glitchy than using a joinable queue
@@ -887,12 +888,17 @@ class Main(object):
         n = 0
         num_stations_used = 0
         need_primary = True
-        maxSearchDistance = 60      # Maximum distance between observation point and station location
+        if float(self.site_lat) < 50:
+            maxSearchDistance = 60      # Maximum distance between observation point and station location
+        else: # In AK, where stations are very rare
+            maxSearchDistance = 300
         maxNumberOfStations = 10    # Maximum number of stations to use to complete record
         while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
             n += 1
             if n == 1:
                 self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
+            if self.searchDistance > 60:
+                need_primary = False
             best_station = self.getBest(need_primary=need_primary)
             if best_station is not None:
                 # Note that the primary station has been found
@@ -938,7 +944,10 @@ class Main(object):
             else:
                 self.log.Wrap("")
                 self.log.Wrap("No suitable station available to replace null values.")
-                self.searchDistance += 10 # Search distance increase interval
+                if float(self.site_lat) < 50:
+                    self.searchDistance += 10 # Search distance increase interval
+                else:
+                    self.searchDistance += 30 # In alaska it will probably go even higher.
                 if self.finalDF.isnull().sum().sum() > 5:
                     if self.searchDistance <= maxSearchDistance:
                         # Clearing previous table data
@@ -1703,5 +1712,15 @@ if __name__ == '__main__':
                   None,
                   SAVE_FOLDER,
                   False]
+    INPUT_LIST = ['PRCP',
+                  '62.235095',
+                  '-159.057434',
+                  2018,
+                  10,
+                  15,
+                  None,
+                  None,
+                  SAVE_FOLDER,
+                  False]
     INSTANCE.setInputs(INPUT_LIST, watershed_analysis=False, all_sampling_coordinates=None)
-    raw_input('Stall for debugging.  Press enter or click X to close')
+    input('Stall for debugging.  Press enter or click X to close')
