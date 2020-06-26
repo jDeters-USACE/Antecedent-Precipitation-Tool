@@ -77,29 +77,58 @@ L = JLog.PrintLog()
 
 def get_json_multiple_ways(url=None):
     """Tries to pull JSON data from a URL using urllib3 first and then requests"""
+    # Common USGS Error Message
+    temp_unavailable_message = 'The requested service is temporarily unavailable.  Please try later.'
+    unavailable_error_count = 0
     # Try urllib3
-    try:
-        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
-        response = http.request('GET', url)
-        time.sleep(3)
-        string_data = str(response.data, 'utf-8')
-        json_conversion = json.loads(string_data)
-        return json_conversion
-    except Exception:
-        urllib3_exception = traceback.format_exc()
     # Try Requests module
     try:
+        L.print_status_message('Querying https://nationalmap.gov/epqs...')
         content = requests.get(url)
-        time.sleep(3)
+        time.sleep(.5)
+        while temp_unavailable_message in content.text:
+            del content
+            unavailable_error_count += 1
+            L.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
+            L.print_status_message('     Retrying query of https://nationalmap.gov/epqs...')
+            time.sleep(unavailable_error_count)
+            content = requests.get(url)
+            time.sleep(unavailable_error_count)
+            if unavailable_error_count > 4:
+                unavailable_error_count = 0
+                break
         json_conversion = content.json()
         return json_conversion
     except Exception:
         requests_exception = traceback.format_exc()
-        L.Write('    ---urllib3 Exception Traceback---')
-        L.Write(urllib3_exception)
-        L.Write('    ----------------------------------')
+    try:
+        L.print_status_message('Querying https://nationalmap.gov/epqs...')
+        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+        response = http.request('GET', url)
+        time.sleep(1)
+        string_data = str(response.data, 'utf-8')
+        while temp_unavailable_message in string_data:
+            del response
+            unavailable_error_count += 1
+            L.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
+            L.print_status_message('     Retrying query of https://nationalmap.gov/epqs...')
+            time.sleep(unavailable_error_count)
+            response = http.request('GET', url)
+            sleep_duration = 3 + unavailable_error_count
+            time.sleep(sleep_duration)
+            string_data = str(response.data, 'utf-8')
+            if unavailable_error_count > 4:
+                unavailable_error_count = 0
+                break
+        json_conversion = json.loads(string_data)
+        return json_conversion
+    except Exception:
         L.Write('    ---Requests Exception Traceback---')
         L.Write(requests_exception)
+        L.Write('    ----------------------------------')
+        urllib3_exception = traceback.format_exc()
+        L.Write('    ---urllib3 Exception Traceback---')
+        L.Write(urllib3_exception)
         L.Write('    ----------------------------------')
 
 
@@ -198,9 +227,75 @@ if __name__ == '__main__':
 
     # Test batch
     L.Wrap('Batch Test')
-    batch_list = [[38.5, -121.5], [36.5, -121.5]]
+    batch_list = [[38.5, -121.5],
+                 [38.512024, -121.85663],
+                 [38.571309, -121.466601],
+                 [38.514189, -121.396986],
+                 [38.305416, -121.752758],
+                 [38.425778, -121.532817],
+                 [38.631153, -121.749137],
+                 [38.376917, -121.612664],
+                 [38.335298, -122.04697],
+                 [38.63407, -122.065706],
+                 [38.142966, -121.730625],
+                 [38.542088, -121.203454],
+                 [38.060273, -121.741327],
+                 [38.735047, -121.694238],
+                 [38.57745, -121.620299],
+                 [38.471649, -121.94944],
+                 [38.562792, -122.004397],
+                 [38.605449, -121.98951],
+                 [38.193847, -121.668168],
+                 [38.399478, -121.858778],
+                 [38.591784, -121.524331],
+                 [38.507899, -121.358888],
+                 [38.599221, -121.821016],
+                 [38.317145, -121.681206],
+                 [38.514709, -121.22082],
+                 [38.105685, -121.78534],
+                 [38.61529, -121.592906],
+                 [38.587815, -121.674077],
+                 [38.334092, -122.0078],
+                 [38.168111, -121.780984],
+                 [38.467505, -121.902848],
+                 [38.210155, -121.786728],
+                 [38.367962, -122.003479],
+                 [38.769371, -121.728745],
+                 [38.341788, -121.532221],
+                 [38.272567, -121.546393],
+                 [38.404386, -121.595936],
+                 [38.171484, -121.713082],
+                 [38.06758, -121.686661],
+                 [38.451716, -121.436812],
+                 [38.593532, -121.759726],
+                 [38.495494, -121.931338],
+                 [38.50655, -121.766059],
+                 [38.692543, -122.086156],
+                 [38.412162, -121.67741],
+                 [38.577833, -121.965081],
+                 [38.414271, -121.920104],
+                 [38.797826, -121.701433],
+                 [38.668811, -121.691171],
+                 [38.37065, -121.957751],
+                 [38.441833, -121.332749],
+                 [38.427668, -121.875828],
+                 [38.35858, -121.667456],
+                 [38.546716, -121.850837],
+                 [38.662205, -121.869923],
+                 [38.303392, -121.934311],
+                 [38.24233, -121.557077],
+                 [38.136003, -121.771312],
+                 [38.44654, -121.699953],
+                 [38.385869, -121.797751],
+                 [38.092827, -121.740964],
+                 [38.574348, -121.903483],
+                 [38.611522, -122.122915],
+                 [38.41825, -121.638275],
+                 [38.55278, -121.346289],
+                 [38.657731, -121.828199],
+                 [38.54989, -121.435088],
+                 [38.275138, -121.851317]]
     test_dict = batch(batch_list)
-    print(test_dict['38.5,-121.5'])
 
 #    # Test outside USA Rectangular Boundary
 #    L.Wrap("")
