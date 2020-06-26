@@ -70,6 +70,7 @@ except Exception:
         UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
         sys.path.append(UTILITIES_FOLDER)
     import JLog
+    import get_files
 
 
 # Function Definitions
@@ -248,10 +249,8 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     # Get the HUC Value of the selected watershed
     huc_string = selected_huc.GetFieldAsString(idx_reg)
     log.Wrap(' {}: {}'.format(field_name, huc_string))
-    if sample is False:
-        log.Wrap('')
-    else:
-        log.print_separator_line()
+    log.Wrap('Area: {} square miles'.format(huc_square_miles))
+    log.Wrap('')
 
     #-----------------------RANDOM SAMPLING POINT GENERATOR SECTION---------------------#
 
@@ -259,6 +258,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     if sample is True:
         # Calculate the Envelope (bounding box) of the selected HUC
         log.print_section('Random Sampling Point Generation Section')
+        log.Wrap('Area: {} square miles'.format(huc_square_miles))
         log.Wrap('Sampling Parameters:')
         log.Wrap(' -{} Points, including user-specified coordinates'.format(num_points))
         log.Wrap(' -All points fall Within the HUC{} ({})'.format(huc_digits, huc_string))
@@ -268,12 +268,39 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
         # Add initially selected coordinates as the first sampling point
         previously_selected_points.append(pt)
         coordinates_within_polygon.append([lat, lon])
-        num_points -= 1
+        num_points -= 1 # Subtracting for adding observation point
+        points_selected = 1 # Starting with observation point
+        points_tested = 1 # Starting with observation point
+        points_tested_since_last_success = 0
+
         while num_points > 0:
             # Create a random X coordinate within the Envelope
             test_x = random.uniform(x_min, x_max)
             # Create a random Y coordinate within the Envelope
             test_y = random.uniform(y_min, y_max)
+            points_tested += 1
+            points_tested_since_last_success += 1
+            test_x_round = round(test_x, 6)
+            test_y_round = round(test_y, 6)
+            if points_tested_since_last_success > 1500:
+                if sampling_point_spacing_miles > 2:
+                    log.Wrap('  {} points selected of {} total generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
+                    points_tested_since_last_success = 0
+                    log.Wrap('1500 points tested since the last suitable one was found.  Lowering minimum spacing by 1 mile')
+                    sampling_point_spacing_miles = round((sampling_point_spacing_miles - 1), 2)
+                    if horizontal_units.lower() in ['meter', 'meters']:
+                        sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
+                    elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
+                        sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
+                    log.Wrap(' -Now each point must be at least {} miles(s) from all other sampling points'.format(sampling_point_spacing_miles))
+                else: # Sampling size already small, we must have enough coverage already
+                    if points_tested_since_last_success > 1400:
+                        log.Wrap('  {} points selected of {} total generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
+                        log.Wrap('3000 points tested since the last suitable one was found.')
+                        log.Wrap(' -Minimum distance already <= 2 miles')
+                        log.Wrap(' -Setting {} as the new required number of points'.format(points_selected))
+                        break
+            log.print_status_message('  {} points selected of {} total generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
             # Create a blank Test Point (OGR Geometry of the type ogr.wkbPoint)
             test_pt = ogr.Geometry(ogr.wkbPoint)
             # Set the Test Point to the random X and Y coordinates
@@ -289,13 +316,15 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
                         properly_spaced = False
                 # Test passed, add to all lists and reduce num_points needed
                 if properly_spaced:
+                    points_tested_since_last_success = 0
                     num_points -= 1
+                    points_selected += 1
                     previously_selected_points.append(test_pt)
                     [wgs_lon, wgs_lat, z] = transform_albers_to_WGS.TransformPoint(test_x, test_y)
                     wgs_lat = round(wgs_lat, 6)
                     wgs_lon = round(wgs_lon, 6)
                     coordinates_within_polygon.append([wgs_lat, wgs_lon])
-        log.Wrap('All {} sampling points generated successfully'.format(len(coordinates_within_polygon)))
+        log.Wrap('All {} sampling points selected from {} randomly generated candidates'.format(points_selected, points_tested))
         log.print_separator_line()
     return huc_string, coordinates_within_polygon, huc_square_miles
 
@@ -402,8 +431,8 @@ def get_huc2_package(huc2):
 if __name__ == '__main__':
     import time
     start_time = time.clock()
-    huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
-                                                           lon=-120.8286800,
+    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.5454,
+                                                           lon=-110.239,
                                                            watershed_scale="HUC8")
 #    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.4,
 #                                                           lon=-80.4,
@@ -415,6 +444,8 @@ if __name__ == '__main__':
         print(' {}'.format(point))
     duration = time.clock() - start_time
     print('Processing took {} seconds'.format(duration))
+
+
 
     DEVMODE = False
     if DEVMODE:
