@@ -299,30 +299,28 @@ class Main(object):
                 stations_pickle_exists = os.path.exists(pickle_path)
                 if stations_pickle_exists:
                     self.log.Wrap('  Cached station data found. Testing...')
-                    remove_pickle = False
                     expiration_hours = 12
                     stale = file_older_than(file_path=pickle_path,
                                             time_unit='hours',
                                             time_value=expiration_hours)
                     if stale:
                         self.log.Wrap('    Cached station data older than {} hours. Deleting...'.format(expiration_hours))
-                        remove_pickle = True
+                        os.remove(pickle_path)
                     else:
                         pickle_size = os.path.getsize(pickle_path)
                         if pickle_size < 15682622:
                             self.log.Wrap('    Cached station data corrupt. Deleting...')
-                            remove_pickle = True
-                    if remove_pickle is True:
+                            os.remove(pickle_path)
+                stations_pickle_exists = os.path.exists(pickle_path)
+                if stations_pickle_exists:
+                    self.log.Wrap('Unserializing cached station data..."')
+                    try:
+                        with open(pickle_path, 'rb') as handle:
+                            self.allStations = pickle.load(handle)
+                    except:
+                        self.log.Wrap('Unserialization failed. Deleting...')
+                        self.allStations = []
                         os.remove(pickle_path)
-                    else:
-                        self.log.Wrap('Unserializing cached station data..."')
-                        try:
-                            with open(pickle_path, 'rb') as handle:
-                                self.allStations = pickle.load(handle)
-                        except:
-                            self.log.Wrap('Unserialization failed. Deleting...')
-                            self.allStations = []
-
         # Calculate Dates
         self.dates = date_calcs.Main(year, month, day)
 
@@ -1689,7 +1687,7 @@ class Main(object):
             return imagePath, yMax, ante_calc_result, score, wet_dry_season_result, palmer_value, palmer_class
 
 if __name__ == '__main__':
-    SAVE_FOLDER = os.path.join(ROOT, 'Output')
+    SAVE_FOLDER = os.path.join(ROOT, 'Outputs')
     INSTANCE = Main()
         # Input_List reference
 #        self.data_type = inputList[0]
