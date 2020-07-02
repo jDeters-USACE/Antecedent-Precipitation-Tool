@@ -157,27 +157,27 @@ class Main(object):
         self.add_reference(frame='Usage-Single',
                            title='How to read the output of a single-point analysis:',
                            pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Single-Point Analysis.pdf'),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20-%20How%20to%20Read%20the%20Output%20of%20a%20Single-Point%20Analysis.pdf",
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Single-Point Analysis.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for a given date:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Single Point - Single Date.pdf'),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Rainfall-Calculator/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Single%20Date.pdf",
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Single Date.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for several dates at once:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Multiple Dates.pdf"),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Multiple%20Dates.pdf",
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Multiple Dates.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for many dates using a spreadsheet:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf"),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Many%20Dates%20Using%20CSV%20Input.pdf",
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis at a daily frequency for a given date range:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Daily Frequency Date Range.pdf"),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20Walkthrough%20-%20Single%20Point%20-%20Daily%20Frequency%20Date%20Range.pdf",
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Daily Frequency Date Range.pdf",
                            youtube_url="")
         self.add_separator(self.central_buttons_frame)
 
@@ -194,7 +194,7 @@ class Main(object):
         self.add_reference(frame='Usage-Watershed',
                            title='How to read the output of a Watershed analysis:',
                            pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Watershed Analysis.pdf'),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT%20-%20How%20to%20Read%20the%20Output%20of%20a%20Watershed%20Analysis.pdf",
+                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Watershed Analysis.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using the USGS Watershed Boundary Dataset:',
