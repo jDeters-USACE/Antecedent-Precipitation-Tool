@@ -234,13 +234,20 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
         huc_square_miles = round(huc_square_miles, 2)
 
     # Determine Sampling Distance and point spacing
-    num_points = huc_square_miles / 18
-    num_points = int(round(num_points, 0))    
-    if num_points < 3:
-        num_points = 3
-    sampling_point_spacing_miles = round((huc_square_miles / 633.145), 2)
-    if sampling_point_spacing_miles < 1:
-        sampling_point_spacing_miles = 1
+#    if huc_square_miles < 5:
+#        sampling_point_spacing_miles = 0.5
+#    elif huc_square_miles < 50:
+#        sampling_point_spacing_miles = 1
+#    elif huc_square_miles < 100:
+#        sampling_point_spacing_miles = 1.5
+#    elif huc_square_miles < 200:
+#        sampling_point_spacing_miles = 2
+#    elif huc_square_miles < 500:
+#        sampling_point_spacing_miles = 2.5
+#    else:
+#        sampling_point_spacing_miles = 2.5 + (huc_square_miles / 1000)
+    sampling_point_spacing_miles = 3.75
+    # Convert SPSM to SPS Linear Unit
     if horizontal_units.lower() in ['meter', 'meters']:
         sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
     elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
@@ -257,21 +264,36 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     # Create Random Sampling Points at the selected spacing (If selected)
     if sample is True:
         # Calculate the Envelope (bounding box) of the selected HUC
-        log.print_section('Random Sampling Point Generation Section')
-        log.Wrap('Area: {} square miles'.format(huc_square_miles))
-        log.Wrap('Sampling Parameters:')
-        log.Wrap(' -{} Points, including user-specified coordinates'.format(num_points))
-        log.Wrap(' -All points fall Within the HUC{} ({})'.format(huc_digits, huc_string))
-        log.Wrap(' -Each point at least {} mile(s) from all other sampling points'.format(sampling_point_spacing_miles))
-        log.Wrap('Generating sampling points...')
         x_min, x_max, y_min, y_max = selected_huc_geom.GetEnvelope()
+
+        # Announce Sampling Points
+        log.print_section('Random Sampling Point Generation Section')
+        log.Wrap('Sampling Protocol:')
+        log.Wrap(' -Latitudes and Longitudes will be randomly generated watershed polygon extremes:')
+        log.Wrap('    HUC{} ({}) Coordinate Extremes (Converted to Meters for testing):'.format(huc_digits, huc_string))
+        log.Wrap('    Maximum Latitude:  {}'.format(y_max))
+        log.Wrap('    Minimum Latitude:  {}'.format(y_min))
+        log.Wrap('    Maximum Longitude: {}'.format(x_max))
+        log.Wrap('    MInimum Longitude: {}'.format(x_min))
+        log.Wrap(' -A point feature will be created for each random Latitude and Longitude.')
+        log.Wrap(' -The point will be tested to see if it falls within the HUC{} ({})'.format(huc_digits, huc_string))
+        log.Wrap(' -The point will be must also be at least {} mile(s) from any previously selected sampling points.'.format(sampling_point_spacing_miles))
+        log.Wrap(' -If all criteria are met, the point will be added to the list of sampling points.')
+        log.Wrap(' -When 1500 consecutive random test points fail these tests, the sampling procedure will be complete.')
+
+        # Announce protocol commencement
+        log.Wrap('')
+        log.Wrap('Generating potential sampling points and testing the above conditions...')
+        
         # Add initially selected coordinates as the first sampling point
         previously_selected_points.append(pt)
         coordinates_within_polygon.append([lat, lon])
-        num_points -= 1 # Subtracting for adding observation point
         points_selected = 1 # Starting with observation point
         points_tested = 1 # Starting with observation point
         points_tested_since_last_success = 0
+
+        # Setting this to use existing structure since it is now based on 1500-attempt timeout
+        num_points = 999
 
         while num_points > 0:
             # Create a random X coordinate within the Envelope
@@ -283,24 +305,20 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
             test_x_round = round(test_x, 6)
             test_y_round = round(test_y, 6)
             if points_tested_since_last_success > 1500:
-                if sampling_point_spacing_miles > 2:
-                    log.Wrap('  {} points selected of {} total generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
+                if num_points < 998:
+                    log.Wrap('Sampling complete (1500 consecutive points tested since the last suitable one was found. Sampling complete).')
+                    break
+                else:
+                    log.Wrap('  {} points selected of {} test candidates generated.'.format(points_selected, points_tested))
                     points_tested_since_last_success = 0
-                    log.Wrap('1500 points tested since the last suitable one was found.  Lowering minimum spacing by 1 mile')
-                    sampling_point_spacing_miles = round((sampling_point_spacing_miles - 1), 2)
+                    log.Wrap('1500 points tested since the last suitable one was found.  Lowering minimum spacing by 0.5 mile.')
+                    sampling_point_spacing_miles = round((sampling_point_spacing_miles - 0.5), 2)
                     if horizontal_units.lower() in ['meter', 'meters']:
                         sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
                     elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
                         sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
                     log.Wrap(' -Now each point must be at least {} miles(s) from all other sampling points'.format(sampling_point_spacing_miles))
-                else: # Sampling size already small, we must have enough coverage already
-                    if points_tested_since_last_success > 1400:
-                        log.Wrap('  {} points selected of {} total generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
-                        log.Wrap('3000 points tested since the last suitable one was found.')
-                        log.Wrap(' -Minimum distance already <= 2 miles')
-                        log.Wrap(' -Setting {} as the new required number of points'.format(points_selected))
-                        break
-            log.print_status_message('  {} points selected of {} total generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
+            log.print_status_message('  {} points selected of {} test candidates generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
             # Create a blank Test Point (OGR Geometry of the type ogr.wkbPoint)
             test_pt = ogr.Geometry(ogr.wkbPoint)
             # Set the Test Point to the random X and Y coordinates
@@ -324,7 +342,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
                     wgs_lat = round(wgs_lat, 6)
                     wgs_lon = round(wgs_lon, 6)
                     coordinates_within_polygon.append([wgs_lat, wgs_lon])
-        log.Wrap('All {} sampling points selected from {} randomly generated candidates'.format(points_selected, points_tested))
+        log.Wrap('{} sampling points selected from {} randomly generated candidates'.format(points_selected, points_tested))
         log.print_separator_line()
     return huc_string, coordinates_within_polygon, huc_square_miles
 
@@ -431,47 +449,74 @@ def get_huc2_package(huc2):
 if __name__ == '__main__':
     import time
     start_time = time.clock()
-    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.5454,
-                                                           lon=-110.239,
-                                                           watershed_scale="HUC8")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.5454,
+#                                                           lon=-110.239,
+#                                                           watershed_scale="HUC8")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.5454,
+#                                                           lon=-110.239,
+#                                                           watershed_scale="HUC10")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.5454,
+#                                                           lon=-110.239,
+#                                                           watershed_scale="HUC12")
 #    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.4,
 #                                                           lon=-80.4,
 #                                                           watershed_scale="HUC8")
-    print('HUC: '.format(huc))
-    print('Square miles: {}'.format(huc_square_miles))
-    print('Sampling Points:')
-    for point in sampling_points:
-        print(' {}'.format(point))
-    duration = time.clock() - start_time
-    print('Processing took {} seconds'.format(duration))
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.4,
+#                                                           lon=-80.4,
+#                                                           watershed_scale="HUC10")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.4,
+#                                                           lon=-80.4,
+#                                                           watershed_scale="HUC12")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
+#                                                           lon=-120.8286800,
+#                                                           watershed_scale="HUC8")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
+#                                                           lon=-120.8286800,
+#                                                           watershed_scale="HUC10")
+#    huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
+#                                                           lon=-120.8286800,
+#                                                           watershed_scale="HUC12")
+#    # Print Output Values for verification
+#    print('HUC: '.format(huc))
+#    print('Square miles: {}'.format(huc_square_miles))
+#    print('Sampling Points:')
+#    for point in sampling_points:
+#        print(' {}'.format(point))
+#    duration = time.clock() - start_time
+#    print('Processing took {} seconds'.format(duration))
 
 
 
-    DEVMODE = False
-    if DEVMODE:
-        HUC = None
-        for HUC_DIGITS in [8, 10, 12]:
-            print("")
-            print("--------{}--------".format(HUC_DIGITS))
-            HUC, POINTS_ON_SURFACE = huc_id_and_sample(lat=38.4008283,
-                                                       lon=-120.8286800,
-                                                       huc_digits=HUC_DIGITS,
-                                                       sample=True,
-                                                       base_huc=HUC)
-            print(HUC)
-            # Export Sampling Points to CSV (DEV ONLY)
-            # Find module path, ROOT folder, and SCRATCH folder
-            MODULE_FOLDER = os.path.dirname(os.path.realpath(__file__))
-            ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
-            SCRATCH_FOLDER = os.path.join(ROOT_FOLDER, 'Scratch')
-            ensure_dir(SCRATCH_FOLDER)
-            scratch_csv = os.path.join(SCRATCH_FOLDER, '{}_points_test.csv'.format(HUC))
-            with open(scratch_csv, 'w') as CSV:
-                CSV.write('Lat,Lon\n')
-                for POINT in POINTS_ON_SURFACE:
-                    CSV.write('{},{}\n'.format(POINT[0], POINT[1]))
-                    print('{},{}'.format(POINT[0], POINT[1]))
-            print("------------------")
-            print("")
+    huc = None
+    for HUC_DIGITS in ["HUC8", "HUC10", "HUC12"]:
+        print("")
+        print("--------{}--------".format(HUC_DIGITS))
+        huc, sampling_points, huc_square_miles = id_and_sample(lat=42.9169149,
+                                                               lon=-81.7317756,
+                                                               watershed_scale=HUC_DIGITS)
+#        huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
+#                                                               lon=-120.8286800,
+#                                                               watershed_scale=HUC_DIGITS)
+#        huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
+#                                                               lon=-120.8286800,
+#                                                               watershed_scale=HUC_DIGITS)
+#        huc, sampling_points, huc_square_miles = id_and_sample(lat=38.4008283,
+#                                                               lon=-120.8286800,
+#                                                               watershed_scale=HUC_DIGITS)
+        print(huc)
+        # Export Sampling Points to CSV (DEV ONLY)
+        # Find module path, ROOT folder, and SCRATCH folder
+        MODULE_FOLDER = os.path.dirname(os.path.realpath(__file__))
+        ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
+        SCRATCH_FOLDER = os.path.join(ROOT_FOLDER, 'Scratch')
+        ensure_dir(SCRATCH_FOLDER)
+        scratch_csv = os.path.join(SCRATCH_FOLDER, '{}_points_test.csv'.format(huc))
+        with open(scratch_csv, 'w') as CSV:
+            CSV.write('Lat,Lon\n')
+            for POINT in sampling_points:
+                CSV.write('{},{}\n'.format(POINT[0], POINT[1]))
+                print('{},{}'.format(POINT[0], POINT[1]))
+        print("------------------")
+        print("")
     
 
