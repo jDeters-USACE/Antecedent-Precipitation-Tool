@@ -53,6 +53,7 @@ import subprocess
 import traceback
 import datetime
 import time
+import ftplib
 
 # Import 3rd-Party Libraries
 import PyPDF2
@@ -618,14 +619,86 @@ class Main(object):
                 self.L.print_title("NOAA Server Status Check")
                 self.L.Wrap('Server Base URL = https://www1.ncdc.noaa.gov/pub/data/ghcn/daily')
                 self.L.Wrap("Testing if NOAA's Server is currently accessible...")
-                test_connection = requests.get("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt")
-                if test_connection.status_code > 299:
-                    self.ncdc_working = False
-                else:
-                    self.ncdc_working = True
-                del test_connection
+                test_url = "https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt"
+                for i in range(5):
+                    if i < 1:
+                        self.L.Wrap('  Attempting to download: {}'.format(test_url))
+                    else:
+                        self.L.Wrap('  Attempt {} of 5 - Downloading: {}'.format((i+1), test_url))
+                    test_connection = requests.get(test_url, timeout=15)
+                    if i > 0:
+                        wait = i * 2
+                        self.L.Wrap('    -Giving the server {} extra seconds to respond'.format(wait))
+                        time.sleep(i)
+                    if test_connection.status_code > 299:
+                        self.L.Wrap('    -Download failed!')
+                        self.ncdc_working = False
+                    else:
+                        self.ncdc_working = True
+                        del test_connection
+                        break
             except Exception:
                 self.ncdc_working = False
+        # Try FTP
+        if self.ncdc_working is False:
+            self.L.Wrap("NOAA'S HTTP SERVER IS UNAVAILABLE - ATTEMPTING TO USE FTP SERVER AS A WORKAROUND...")
+            self.L.Wrap('Server Base URL = ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily')
+            self.L.Wrap("Testing if NOAA's Server is currently accessible...")
+            test_url = "ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt"
+            for i in range(5):
+                test_url = "ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt"
+                if i < 1:
+                    self.L.Wrap('  Attempting to download: {}'.format(test_url))
+                else:
+                    self.L.Wrap('  Attempt {} of 5 - Downloading: {}'.format((i+1), test_url))
+                    module_path = os.path.dirname(os.path.realpath(__file__))
+                    root_folder = os.path.split(module_path)[0]
+                    local_file_name = 'readme.txt'
+                    local_file_path = os.path.join(root_folder, local_file_name)
+                    # Delete the old file if it exists so this test works properly
+                    try:
+                        os.remove(local_file_path)
+                    except Exception:
+                        pass
+                    test_url = "ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily"
+                    strip_ftp = test_url[6:]
+                    first_slash = strip_ftp.find('/')
+                    ftp_address = strip_ftp[:first_slash]
+                    ftp_folder = strip_ftp[(first_slash+1):]
+                    try:
+                        self.L.Wrap('   -Creating FTP Instance for {}...'.format(ftp_address))
+                        ftp = ftplib.FTP(ftp_address)
+                        self.L.Wrap('   -Logging in to FTP Instance...')
+                        ftp.login()
+                        self.L.Wrap('   -Navigating to selected folder ({})...'.format(ftp_folder))
+                        ftp.cwd(ftp_folder)
+                        self.L.Wrap('   -Downloading via File Transfer Protocol...')
+                        ftp.retrbinary("RETR {}".format(local_file_name), open(local_file_path, 'wb').write)
+                        ftp.quit()
+                        del ftp
+                        # Check DLY file size and switch to http if < 2 KB
+                        self.L.Wrap('   -Testing file...')
+                        dly_size = os.path.getsize(local_file_path)
+                        if dly_size < 300: # 241 is what the 403 Forbidden error has been producing during Gov't Shutdown
+                            self.L.Wrap('     -403 Forbidden error received.')
+                            self.ncdc_working = False
+                            try:
+                                os.remove(local_file_path)
+                            except Exception:
+                                pass
+                        else:
+                            self.ncdc_working = True
+                            try:
+                                os.remove(local_file_path)
+                            except Exception:
+                                pass
+                            break
+                    except Exception:
+                        try:
+                            ftp.quit()
+                            del ftp
+                        except Exception:
+                            pass
         if self.ncdc_working is False:
             self.L.Wrap('                   ###################')
             self.L.Wrap("  NOAA's Server is ###---OFFLINE---###")
@@ -1309,7 +1382,7 @@ class Main(object):
                                            LogOnly=True)
                 # Write first line of CSV
                 if watershed_scale == 'Single Point':
-                    csv_writer.Wrap('Latitude,Longitude,Date,Image Name,Image Source,PDSI Value,PDSI Class,Season,ARC Score,Antecedent Precip Condition')
+                    csv_writer.Wrap('Latitude,Longitude,Date,PDSI Value,PDSI Class,Season,ARC Score,Antecedent Precip Condition')
                 else:
                     csv_writer.Wrap('Latitude,Longitude,Date,PDSI Value,PDSI Class,Season,ARC Score,Antecedent Precip Condition')
                 # Create watershed_summary results_list
@@ -1369,8 +1442,6 @@ class Main(object):
                                                                                              all_items[3], # Observation Year
                                                                                              all_items[4], # Observation Month
                                                                                              all_items[5], # Observation Day
-                                                                                             all_items[6], # Image Name
-                                                                                             all_items[7], # Image Source
                                                                                              all_items[10], # PDSI Value
                                                                                              all_items[11], # PDSI Class
                                                                                              all_items[12], # Season
@@ -1678,7 +1749,6 @@ class DateEntry(tkinter.Frame):
             self.month_testable = True
         if self.month_testable:
             self._test_date()
-
 
     def entry_day_check(self, e):
         self.day_testable = False
