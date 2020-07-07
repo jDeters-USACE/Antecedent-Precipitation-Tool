@@ -184,24 +184,63 @@ def shapefile_sample(lat, lon, shapefile):
 
     #-----------------------RANDOM SAMPLING POINT GENERATOR SECTION---------------------#
 
-    # Create Random Sampling Points at the selected spacing (If selected)
     # Calculate the Envelope (bounding box) of the selected HUC
-    log.print_section('Random Sampling Point Generation Section')
-    log.Wrap('Sampling Parameters:')
-    log.Wrap(' -{} Points, including user-specified coordinates'.format(num_points))
-    log.Wrap(' -All points fall Within the Custom Watershed provided')
-    log.Wrap(' -Each point at least {} mile(s) from all other sampling points'.format(sampling_point_spacing_miles))
-    log.Wrap('Generating sampling points...')
     x_min, x_max, y_min, y_max = selected_feature_geometry.GetEnvelope()
+
+    # Announce Sampling Points
+    log.print_section('Random Sampling Point Generation Section')
+    log.Wrap('Sampling Protocol:')
+    log.Wrap(' -Latitudes and Longitudes will be randomly generated watershed polygon extremes:')
+    log.Wrap('   -Custom Watershed Coordinate Extremes (Converted to Meters for testing):')
+    log.Wrap('      -Maximum Latitude:  {}'.format(y_max))
+    log.Wrap('      -Minimum Latitude:  {}'.format(y_min))
+    log.Wrap('      -Maximum Longitude: {}'.format(x_max))
+    log.Wrap('      -MInimum Longitude: {}'.format(x_min))
+    log.Wrap(' -An OGR point geometry will be created to test each random Latitude and Longitude.')
+    log.Wrap('   -The point must fall Within the Custom Watershed provided')
+    log.Wrap('   -The point must also be at least {} mile(s) from any previously selected sampling points.'.format(sampling_point_spacing_miles))
+    log.Wrap(' -If both criteria are met, the point will be added to the list of sampling points.')
+    log.Wrap(' -When 3000 consecutive random test points fail these tests, the sampling procedure will be complete.')
+
+    # Announce protocol commencement
+    log.Wrap('')
+    log.Wrap('Generating potential sampling points and testing the above conditions...')
+    
     # Add initially selected coordinates as the first sampling point
     previously_selected_points.append(pt)
     coordinates_within_polygon.append([lat, lon])
-    num_points -= 1
+    points_selected = 1 # Starting with observation point
+    points_tested = 1 # Starting with observation point
+    points_tested_since_last_success = 0
+
+    # Setting this to use existing structure since it is now based on 1500-attempt timeout
+    num_points = 999
+    num_points -= 1 # Subtracting for adding observation point
+
     while num_points > 0:
         # Create a random X coordinate within the Envelope
         test_x = random.uniform(x_min, x_max)
         # Create a random Y coordinate within the Envelope
         test_y = random.uniform(y_min, y_max)
+        points_tested += 1
+        points_tested_since_last_success += 1
+        test_x_round = round(test_x, 6)
+        test_y_round = round(test_y, 6)
+        if points_tested_since_last_success > 3000:
+            if num_points < 997: 
+                log.Wrap('Sampling complete (3000 consecutive points tested since the last suitable one was found).')
+                break
+            else:
+                log.Wrap('  {} points selected of {} test candidates generated.'.format(points_selected, points_tested))
+                points_tested_since_last_success = 0
+                log.Wrap('3000 points tested since the last suitable one was found.  Lowering minimum spacing by 0.5 mile.')
+                sampling_point_spacing_miles = round((sampling_point_spacing_miles - 0.5), 2)
+                if horizontal_units.lower() in ['meter', 'meters']:
+                    sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
+                elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
+                    sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
+                log.Wrap(' -Now each point must be at least {} miles(s) from all other sampling points'.format(sampling_point_spacing_miles))
+        log.print_status_message('  {} points selected of {} test candidates generated. Testing ({}, {})'.format(points_selected, points_tested, test_y_round, test_x_round))
         # Create a blank Test Point (OGR Geometry of the type ogr.wkbPoint)
         test_pt = ogr.Geometry(ogr.wkbPoint)
         # Set the Test Point to the random X and Y coordinates
@@ -217,13 +256,15 @@ def shapefile_sample(lat, lon, shapefile):
                     properly_spaced = False
             # Test passed, add to all lists and reduce num_points needed
             if properly_spaced:
+                points_tested_since_last_success = 0
                 num_points -= 1
+                points_selected += 1
                 previously_selected_points.append(test_pt)
                 [wgs_lon, wgs_lat, z] = transform_albers_to_wgs.TransformPoint(test_x, test_y)
                 wgs_lat = round(wgs_lat, 6)
                 wgs_lon = round(wgs_lon, 6)
                 coordinates_within_polygon.append([wgs_lat, wgs_lon])
-    log.Wrap('All {} sampling points generated successfully'.format(len(coordinates_within_polygon)))
+    log.Wrap('{} sampling points selected from {} randomly generated candidates'.format(points_selected, points_tested))
     log.print_separator_line()
     return coordinates_within_polygon, huc_square_miles
 
@@ -233,9 +274,11 @@ def shapefile_sample(lat, lon, shapefile):
 if __name__ == '__main__':
     import time
     start_time = time.clock()
+    SCRATCH_FOLDER = os.path.join(ROOT, 'Scratch')
+    SHAPEFILE = os.path.join(SCRATCH_FOLDER, '')
     sampling_points, huc_square_miles = shapefile_sample(lat=38.325033,
                                                          lon=-121.356081,
-                                                         shapefile=r"c:\Users\L2RCSJ9D\Desktop\delete\~anteTest\Cosumnes_Drainage_Area2.shp")
+                                                         shapefile=SHAPEFILE)
     print(huc_square_miles)
     for point in sampling_points:
         print(point)
