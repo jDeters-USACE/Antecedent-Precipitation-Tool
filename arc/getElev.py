@@ -75,22 +75,27 @@ except Exception:
 
 L = JLog.PrintLog()
 
-def get_json_multiple_ways(url=None):
+def get_json_multiple_ways(url):
     """Tries to pull JSON data from a URL using urllib3 first and then requests"""
+    log = JLog.PrintLog()
+    if 'https://nationalmap.gov/epqs' in url:
+        base_url = 'https://nationalmap.gov/epqs'
+    elif 'https://ned.usgs.gov/epqs' in url:
+        base_url = 'https://ned.usgs.gov/epqs'
     # Common USGS Error Message
     temp_unavailable_message = 'The requested service is temporarily unavailable.  Please try later.'
     unavailable_error_count = 0
     # Try urllib3
     # Try Requests module
     try:
-        L.print_status_message('Querying https://nationalmap.gov/epqs...')
-        content = requests.get(url)
+        log.print_status_message('Querying {}...'.format(base_url))
+        content = requests.get(url, timeout=15)
         time.sleep(.5)
         while temp_unavailable_message in content.text:
             del content
             unavailable_error_count += 1
-            L.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
-            L.print_status_message('     Retrying query of https://nationalmap.gov/epqs...')
+            log.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
+            log.print_status_message('     Retrying query of {}...'.format(base_url))
             time.sleep(unavailable_error_count)
             content = requests.get(url)
             time.sleep(unavailable_error_count)
@@ -102,7 +107,7 @@ def get_json_multiple_ways(url=None):
     except Exception:
         requests_exception = traceback.format_exc()
     try:
-        L.print_status_message('Querying https://nationalmap.gov/epqs...')
+        log.print_status_message('Querying {}...'.format(base_url))
         http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
         response = http.request('GET', url)
         time.sleep(1)
@@ -110,8 +115,8 @@ def get_json_multiple_ways(url=None):
         while temp_unavailable_message in string_data:
             del response
             unavailable_error_count += 1
-            L.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
-            L.print_status_message('     Retrying query of https://nationalmap.gov/epqs...')
+            log.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
+            log.print_status_message('     Retrying query of {}...'.format(base_url))
             time.sleep(unavailable_error_count)
             response = http.request('GET', url)
             sleep_duration = 3 + unavailable_error_count
@@ -146,7 +151,7 @@ def checkUSA(lat, lon):
         inUSA = False
     return inUSA
 
-def elevUSGS(lat, lon, units='Feet', batch=False):
+def elevUSGS_nationalmap(lat, lon, units='Feet', batch=False):
     url = u'https://nationalmap.gov/epqs/pqs.php?x={}&y={}&output=json&units={}'.format(lon, lat, units)
     # Pre-set Elevation to USGS Server's fail code
     elevation = "-1000000"
@@ -163,10 +168,6 @@ def elevUSGS(lat, lon, units='Feet', batch=False):
             elevation = query['Elevation']
             return elevation
         except Exception:
-            try:
-                del content
-            except:
-                pass
             if x < 2:
                 L.Wrap('  Attempt {} failed, trying again in 1 second...'.format((x+1)))
                 time.sleep(1)
@@ -183,24 +184,57 @@ def elevUSGS(lat, lon, units='Feet', batch=False):
     elevation = query['Elevation']
     return elevation
 
-def main(lat, lon, units='Feet'):
+def elevUSGS_ned(lat, lon, units='Feet', batch=False):
+    url = u'https://ned.usgs.gov/epqs/pqs.php?x={}&y={}&units={}&output=json'.format(lon, lat, units)
+    # Pre-set Elevation to USGS Server's fail code
+    elevation = "-1000000"
+    # Get JSON format text from url Body
+    if not batch:
+        L.Wrap('Request URL: {}'.format(url))
+    # Attempting to use standard requests style OR urllib2 module
+    for x in range(3):
+        seconds = ((x+1)*3)
+        try:
+            json_result = get_json_multiple_ways(url)
+            service = json_result['USGS_Elevation_Point_Query_Service']
+            query = service['Elevation_Query']
+            elevation = query['Elevation']
+            return elevation
+        except Exception:
+            if x < 2:
+                L.Wrap('  Attempt {} failed, trying again in 1 second...'.format((x+1)))
+                time.sleep(1)
+            else:
+                L.Wrap('  Attempt {} failed.'.format((x+1)))
+    # Try Selenium Requests Method if Requests fails
+    L.Wrap('---Urllib3 and Requests Modules Failed----')
+    L.Wrap('Attempting to collect the data through web-browser automation...')
+    instance = selenium_operations.getJSON(url)
+    json_result = instance()
+    # Switch to manual entry if web requests are not working
+    service = json_result['USGS_Elevation_Point_Query_Service']
+    query = service['Elevation_Query']
+    elevation = query['Elevation']
+    return elevation
+
+def main(lat, lon, units='Feet', epqs_variant='nationalmap'):
     L.Wrap('Querying Elevation at Observation Point ({}, {})...'.format(lat, lon))
 #    in_usa = checkUSA(lat, lon)
 #    if in_usa is True:
 #        L.Wrap('Point is within USA boundary. Using USGS Elevation Query Service...')
-    elevation = elevUSGS(lat, lon)
+    if epqs_variant == 'nationalmap':
+        elevation = elevUSGS_nationalmap(lat, lon)
+    elif epqs_variant == 'ned':
+        elevation = elevUSGS_ned(lat, lon)
     if elevation == "-1000000":
         L.Wrap('USGS Elevation Querry Failed. Using https://www.freemaptools.com/elevation-finder.htm...')
         elevation = selenium_operations.global_elev_query(lat, lon)
-#    else:
-#        L.Wrap('USGS Elevation Querry Failed. Using https://www.freemaptools.com/elevation-finder.htm...')
-#        elevation = selenium_operations.global_elev_query(lat, lon)
     L.Wrap('-------------------------------')
     L.Wrap('Elevation = {} {}'.format(elevation, units))
     L.Wrap('-------------------------------')
     return float(elevation)
 
-def batch(list_of_coords, units='Feet'):
+def batch(list_of_coords, units='Feet', epqs_variant='nationalmap'):
     sampling_point_elevations = dict()
     L.print_section('Querying USGS Elevation Service for each Watershed Sampling Point')
     sp_num = 0
@@ -208,7 +242,10 @@ def batch(list_of_coords, units='Feet'):
         sp_num += 1
         lat = coords[0]
         lon = coords[1]
-        elevation = elevUSGS(lat, lon, batch=True)
+        if epqs_variant == 'nationalmap':
+            elevation = elevUSGS_nationalmap(lat, lon, batch=True)
+        elif epqs_variant == 'ned':
+            elevation = elevUSGS_ned(lat, lon, batch=True)
         if elevation == "-1000000":
             L.Wrap('USGS Elevation Querry Failed. Using https://www.freemaptools.com/elevation-finder.htm...')
             elevation = selenium_operations.global_elev_query(lat, lon)

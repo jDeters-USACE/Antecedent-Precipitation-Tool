@@ -57,6 +57,10 @@ ROOT = os.path.dirname(MODULE_PATH)
 warnings.filterwarnings("ignore")
 
 # Import 3rd Party Libraries
+
+import requests
+import urllib3
+import json
 import numpy
 import pandas
 import ulmo
@@ -67,6 +71,9 @@ import matplotlib.dates as dates
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
 import pylab
+# Stop annoying urllib3 errors for EPQS tests
+# import logging
+# logging.getLogger("urllib3").setLevel(logging.ERROR)
 
 # Import Custom Modules
 try:
@@ -103,20 +110,116 @@ except Exception:
     import web_wimp_scraper
 
 
-# Version stuff
-get_all.ensure_version_file()
-VERSION_FILE_PATH = os.path.join(ROOT, 'version')
-with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
-    for line in VERSION_FILE:
-        VERSION_STRING = line.replace('\n','')
-        VERSION_LIST = VERSION_STRING.split('.')
-        VERSION_FOR_PATHS = 'v{}_{}_{}'.format(VERSION_LIST[0], VERSION_LIST[1], VERSION_LIST[2])
-        break
-
 
 # FUNCTION DEFINITIONS
 
+def get_json_multiple_ways(url):
+    """Tries to pull JSON data from a URL using urllib3 first and then requests"""
+    log = JLog.PrintLog()
+    if 'https://nationalmap.gov/epqs' in url:
+        base_url = 'https://nationalmap.gov/epqs'
+    elif 'https://ned.usgs.gov/epqs' in url:
+        base_url = 'https://ned.usgs.gov/epqs'
+    # Common USGS Error Message
+    temp_unavailable_message = 'The requested service is temporarily unavailable.  Please try later.'
+    unavailable_error_count = 0
+    # Try urllib3
+    # Try Requests module
+    try:
+        log.print_status_message('Querying {}...'.format(base_url))
+        content = requests.get(url, timeout=15)
+        time.sleep(.5)
+        while temp_unavailable_message in content.text:
+            del content
+            unavailable_error_count += 1
+            log.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
+            log.print_status_message('     Retrying query of {}...'.format(base_url))
+            time.sleep(unavailable_error_count)
+            content = requests.get(url)
+            time.sleep(unavailable_error_count)
+            if unavailable_error_count > 4:
+                unavailable_error_count = 0
+                break
+        json_conversion = content.json()
+        return json_conversion
+    except Exception:
+        requests_exception = traceback.format_exc()
+    try:
+        log.print_status_message('Querying {}...'.format(base_url))
+        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+        response = http.request('GET', url)
+        time.sleep(1)
+        string_data = str(response.data, 'utf-8')
+        while temp_unavailable_message in string_data:
+            del response
+            unavailable_error_count += 1
+            log.Write('     USGS SERVER:  "{}"'.format(temp_unavailable_message))
+            log.print_status_message('     Retrying query of {}...'.format(base_url))
+            time.sleep(unavailable_error_count)
+            response = http.request('GET', url)
+            sleep_duration = 3 + unavailable_error_count
+            time.sleep(sleep_duration)
+            string_data = str(response.data, 'utf-8')
+            if unavailable_error_count > 4:
+                unavailable_error_count = 0
+                break
+        json_conversion = json.loads(string_data)
+        return json_conversion
+    except Exception:
+        pass
 
+def test_usgs_epqs_servers():
+    """Tests if either one of the known USGS Elevation Point Query Service (EPQS) Servers are Online"""
+    log = JLog.PrintLog()
+    log.print_title('USGS Elevation Point Query Service (EPQS) Status Check')
+    log.Wrap('Original - National Map Variant:')
+    test_url_nationalmap = 'https://nationalmap.gov/epqs/pqs.php?x=-121.5&y=38.5&output=json&units=Feet'
+    log.Wrap('  -Test URL: {}'.format(test_url_nationalmap))
+    log.Wrap('  -Attempting to connect (15-second timeout)')
+    try:
+        json_result = get_json_multiple_ways(test_url_nationalmap)
+        log.Wrap('')
+        service = json_result['USGS_Elevation_Point_Query_Service']
+        query = service['Elevation_Query']
+        elevation = query['Elevation']
+        log.Wrap('')
+        log.Wrap('    ###########################################')
+        log.Wrap('    # --- National Map EPQS Server Online --- #')
+        log.Wrap('    ###########################################')
+        log.Wrap('')
+        return 'nationalmap'
+    except Exception:
+        log.Wrap('')
+        log.Wrap('    ############################################')
+        log.Wrap('    # --- National Map EPQS Server Offline --- #')
+        log.Wrap('    ############################################')
+        log.Wrap('')
+    log.Wrap('New Mirror - National Elevation Dataset (NED) Variant:')
+    test_url_ned = 'https://ned.usgs.gov/epqs/pqs.php?x=-121.5&y=38.5&units=Feet&output=json'
+    log.Wrap('  -Test URL: {}'.format(test_url_ned))
+    log.Wrap('  -Attempting to connect (15-second timeout)')
+    try:
+        json_result = get_json_multiple_ways(test_url_ned)
+        log.Wrap('')
+        service = json_result['USGS_Elevation_Point_Query_Service']
+        query = service['Elevation_Query']
+        elevation = query['Elevation']
+        log.Wrap('')
+        log.Wrap('    ##################################')
+        log.Wrap('    # --- NED EPQS Server Online --- #')
+        log.Wrap('    ##################################')
+        log.Wrap(' ')
+        log.Wrap('Proceeding with request...')
+        log.print_separator_line()
+        log.Wrap(' ')
+        return 'ned'
+    except Exception:
+        log.Wrap('')
+        log.Wrap('    ###################################')
+        log.Wrap('    # --- NED EPQS Server Offline --- #')
+        log.Wrap('    ###################################')
+        log.Wrap('')
+        raise Exception('The APT is unable to run if both USGS Elevation Point Query Services are offline.')
 
 def file_older_than(file_path, time_unit, time_value):
     """
@@ -265,6 +368,8 @@ class Main(object):
         # Watershed Analysis variables
         self.old_all_sampling_coordinates = None
         self.all_sampling_coordinate_elevations = None
+        # Test USGS EPQS Servers
+        self.epqs_variant = test_usgs_epqs_servers() 
 
     def set_yMax(self, yMax):
         self.log.Wrap('Setting yMax to ' + str(yMax))
@@ -327,7 +432,7 @@ class Main(object):
         if self.oldLatLong is None:
             self.oldLatLong = (self.site_lat, self.site_long)
             # Querying Elevation of Observation Point
-            self.obs_elevation = round(getElev.main(self.site_lat, self.site_long), 3)
+            self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
         else:
             if self.oldLatLong == (self.site_lat, self.site_long):
                 self.log.Wrap('Same location. Keeping recent stations list.')
@@ -335,14 +440,14 @@ class Main(object):
                     self.obs_elevation == 0
                 except Exception:
                     # Querying Elevation of Observation Point'
-                    self.obs_elevation = round(getElev.main(self.site_lat, self.site_long), 3)
+                    self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
             else:
                 self.oldLatLong = (self.site_lat, self.site_long)
                 self.searchDistance = 30 # Miles
                 # Querying Elevation of Observation Point'
                 if not self.watershed_analysis:
                     self.log.Wrap('New location, starting new recent stations list.')
-                    self.obs_elevation = round(getElev.main(self.site_lat, self.site_long), 3)
+                    self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
                     self.recentStations = []
                     self.wimp_scraper = web_wimp_scraper.WimpScraper()
                 else:
@@ -356,7 +461,7 @@ class Main(object):
                                 dict_key = '{},{}'.format(self.site_lat, self.site_long)
                                 self.obs_elevation = self.all_sampling_coordinate_elevations[dict_key]
                             except:
-                                self.obs_elevation = round(getElev.main(self.site_lat, self.site_long), 3)
+                                self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
                         else:
                             self.log.Wrap('New Watershed Analysis - starting new recent stations list.')
                             self.recentStations = []
@@ -365,21 +470,32 @@ class Main(object):
 
 
         if self.save_folder is not None:
+            # Get main_ex version for folder path
+            module_path = os.path.dirname(os.path.realpath(__file__))
+            root_folder = os.path.dirname(module_path)
+            version_files_folder = os.path.join(root_folder, 'v')
+            main_version_file_path = os.path.join(version_files_folder, 'main_ex')
+            with open(main_version_file_path, 'r') as version_file:
+                for line in version_file:
+                    version_string = line.replace('\n','')
+                    version_list = version_string.split('.')
+                    version_for_paths = 'v{}_{}_{}'.format(version_list[0], version_list[1], version_list[2])
+                    break
             # Create PDF output Folder
             if self.data_type == 'PRCP':
                 watershed_analysis = False
-                version_folder = os.path.join(self.save_folder, VERSION_FOR_PATHS)
+                version_folder = os.path.join(self.save_folder, version_for_paths)
                 coord_string = '{}, {}'.format(self.site_lat, self.site_long)
                 self.folderPath = os.path.join(version_folder, coord_string)
             if self.data_type == 'SNOW':
                 watershed_analysis = False
-                version_folder = os.path.join(self.save_folder, VERSION_FOR_PATHS)
+                version_folder = os.path.join(self.save_folder, version_for_paths)
                 snow_folder = os.path.join(version_folder, 'Snowfall')
                 coord_string = '{}, {}'.format(self.site_lat, self.site_long)
                 self.folderPath = os.path.join(snow_folder, coord_string)
             if self.data_type == 'SNWD':
                 watershed_analysis = False
-                version_folder = os.path.join(self.save_folder, VERSION_FOR_PATHS)
+                version_folder = os.path.join(self.save_folder, version_for_paths)
                 snow_depth_folder = os.path.join(version_folder, 'Snow Depth')
                 coord_string = '{}, {}'.format(self.site_lat, self.site_long)
                 self.folderPath = os.path.join(snow_depth_folder, coord_string)
@@ -756,7 +872,7 @@ class Main(object):
                 # Query all Elevations
                 if self.watershed_analysis is True:
                     if self.all_sampling_coordinate_elevations is None:
-                        self.all_sampling_coordinate_elevations = getElev.batch(self.all_sampling_coordinates)
+                        self.all_sampling_coordinate_elevations = getElev.batch(self.all_sampling_coordinates, epqs_variant=self.epqs_variant)
             except Exception:
                 self.log.Wrap(traceback.format_exc())
         # Maintain processing pool until all jobs are complete and collect results
