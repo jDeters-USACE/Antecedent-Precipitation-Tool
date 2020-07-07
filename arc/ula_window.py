@@ -31,6 +31,7 @@
 
 import os
 import sys
+import time
 import tkinter
 import tkinter.ttk
 import subprocess
@@ -163,18 +164,28 @@ class Main(object):
 
     def click_accept_button(self):
         self.master.destroy() # Close ULA window
+        self.write_ula_accepted_file()
+        print('Checking for a newer version of the APT...')
         get_all.main()
+        print('Checking for all required images...')
         get_all.ensure_images()
+        print('Checking for Watershed Boundary Dataset - HUC2.shp...')
         get_all.ensure_wbd_folder()
+        print('Checking for U.S. Boundary dataset...')
         get_all.ensure_us_shp_folder()
+        print('Checking for NOAA Climate Divisions dataset...')
         get_all.ensure_climdiv_folder()
+        print('Checking for latest nationwide cache of the Web-based Watershed Interactive Modeling Program (WebWIMP) results...')
         get_all.ensure_WIMP()
+        print('Checking for all additional binaries required for exectuion...')
         get_all.ensure_binaries()
+        print("All checks completed successfully.")
+        print("")
+        print('Launching APT...')
         module_folder = os.path.dirname(os.path.realpath(__file__))
         root_folder = os.path.split(module_folder)[0]
         main_exe_path = '"{}\\main_ex.exe"'.format(root_folder)
         test = subprocess.Popen(main_exe_path, shell=True)
-        import time
         time.sleep(2)
         x = test.poll()
         if x == 4294967295:
@@ -183,7 +194,6 @@ class Main(object):
             get_all.attempt_repair()
             print('Repair package installed successfully.  Attempting to run main EXE again...')
             test = subprocess.Popen(main_exe_path, shell=True)
-            import time
             time.sleep(2)
             x = test.poll()
             if x == 4294967295:
@@ -198,9 +208,39 @@ class Main(object):
     def click_cancel_button(self):
         self.master.destroy() # Close ULA window
         return False
+    
+    def write_ula_accepted_file(self):
+        # Define path for the ula_accepted_file
+        module_path = os.path.dirname(os.path.realpath(__file__))
+        root_folder = os.path.split(module_path)[0]
+        ula_accepted_file = os.path.join(root_folder, 'ula_accepted')
+        try:
+            # Get network information
+            process = subprocess.Popen("ipconfig.exe",
+                                       shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT,
+                                       universal_newlines=True)
+            output, error = process.communicate()
+            # Test if user is on USACE network
+            internal_user = 'usace.army.mil' in output
+            if internal_user:
+                # Create a ula_accepted file to stop the ULA window from opening in the future
+                with open(ula_accepted_file, 'w') as accept_file:
+                    accept_file.write('True')
+        except Exception:
+            pass # Because this step doesn't really matter
 
     def run(self):
-        self.master.mainloop()
+        # Find "ula_accepted.txt"
+        module_path = os.path.dirname(os.path.realpath(__file__))
+        root_folder = os.path.split(module_path)[0]
+        ula_accepted_file = os.path.join(root_folder, 'ula_accepted')
+        ula_accepted_file_exists = os.path.exists(ula_accepted_file)
+        if ula_accepted_file_exists:
+            self.click_accept_button()
+        else:
+            self.master.mainloop()
 
 if __name__ == '__main__':
     APP = Main()
