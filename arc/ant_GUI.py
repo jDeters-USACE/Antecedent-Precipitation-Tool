@@ -95,17 +95,16 @@ except Exception:
         sys.path.append(UTILITIES_FOLDER)
     import JLog
 
-
 # Version stuff
 get_all.ensure_version_file()
-VERSION_FILE_PATH = os.path.join(ROOT, 'version')
+VERSION_FILES_FOLDER = os.path.join(ROOT, 'v')
+VERSION_FILE_PATH = os.path.join(VERSION_FILES_FOLDER, 'main_ex')
 with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
     for line in VERSION_FILE:
         VERSION_STRING = line.replace('\n','')
         VERSION_LIST = VERSION_STRING.split('.')
         VERSION_FOR_PATHS = 'v{}_{}_{}'.format(VERSION_LIST[0], VERSION_LIST[1], VERSION_LIST[2])
         break
-
 
 def click_help_button():
     help_app = help_window.Main()
@@ -1437,7 +1436,7 @@ class Main(object):
                             all_items = current_input_list + [palmer_value, palmer_class, wet_dry_season, condition, ante_score]
                             if watershed_scale == 'Single Point':
                                 # Write results to CSV
-                                csv_writer.Wrap('{},{},{}-{}-{},{},{},{},{},{},{},{}'.format(current_input_list[1], # Latitude
+                                csv_writer.Wrap('{},{},{}-{}-{},{},{},{},{},{}'.format(current_input_list[1], # Latitude
                                                                                              current_input_list[2], # Longitude
                                                                                              all_items[3], # Observation Year
                                                                                              all_items[4], # Observation Month
