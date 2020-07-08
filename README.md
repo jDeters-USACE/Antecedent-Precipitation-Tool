@@ -6,6 +6,10 @@ Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/jDet
 
 An automation tool that evaluates three climatological parameters to assist in the making and documenting of various determinations required by policy for the execution of USACE&#39;s Regulatory Program.
 
+## Scale
+The tool can perform its analyses at a single point, for the consideration of wetland hydrology, or it can be configured to run on a watershed scale to help support a typical year analysis.
+
+
 ## Usage
 
 Rapidly, accurately, and effortlessly determine whether any of the following problematic circumstances exist for a given Latitude, Longitude, and Date:
