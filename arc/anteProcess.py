@@ -1051,10 +1051,14 @@ class Main(object):
                     # SAVE RESULTS TO CSV IN OUTPUT DIRECTORY
                     if self.save_folder is not None:
                         # Generate output
-                        station_csv_path = os.path.join(self.stationFolderPath, '{}.csv'.format(best_station.name))
-                        if os.path.isfile(station_csv_path) is False:
-                            self.log.Wrap('Saving station data to CSV in output folder...')
-                            best_station.Values.to_csv(station_csv_path)
+                        try:
+                            station_csv_name = '{}.csv'.format(best_station.name).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
+                            station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
+                            if os.path.isfile(station_csv_path) is False:
+                                self.log.Wrap('Saving station data to CSV in output folder...')
+                                best_station.Values.to_csv(station_csv_path)
+                        except Exception:
+                            pass # Will add an announcement that station data save failed later
             else:
                 self.log.Wrap("")
                 self.log.Wrap("No suitable station available to replace null values.")
