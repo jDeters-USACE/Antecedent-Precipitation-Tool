@@ -1006,7 +1006,7 @@ class Main(object):
             maxSearchDistance = 60      # Maximum distance between observation point and station location
         else: # In AK, where stations are very rare
             maxSearchDistance = 300
-        maxNumberOfStations = 10    # Maximum number of stations to use to complete record
+        maxNumberOfStations = 15    # Maximum number of stations to use to complete record
         while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
             n += 1
             if n == 1:
@@ -1700,6 +1700,8 @@ class Main(object):
                 bValue = 0.059
             elif num_stations_used == 11:
                 bValue = 0.068
+            else:
+                bValue = 0.075
 
             # Determine horizontal separation value by table rows
             if num_stations_used < 9:
@@ -1707,7 +1709,7 @@ class Main(object):
             elif num_stations_used < 11:
                 hValue = 0.17
             else:
-                hValue = 0.19
+                hValue = 0.40
 
             # Remove space between subplots
             plt.subplots_adjust(wspace=0.00,
