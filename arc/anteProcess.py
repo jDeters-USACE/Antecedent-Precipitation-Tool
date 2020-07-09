@@ -1129,11 +1129,19 @@ class Main(object):
 
         # SAVE finalDF TO CSV IN OUTPUT DIRECTORY
         if self.save_folder is not None:
+            # Ensure output folder exists
+            try:
+                os.makedirs(self.stationFolderPath)
+            except Exception:
+                pass
             # Generate output
             merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations.csv")
-            if os.path.isfile(merged_stations_output_path) is False:
-                self.log.Wrap('Saving "merged_stations.csv" data to output folder...')
-                self.finalDF.to_csv(merged_stations_output_path)
+            try:
+                if os.path.isfile(merged_stations_output_path) is False:
+                    self.log.Wrap('Saving "merged_stations.csv" data to output folder...')
+                    self.finalDF.to_csv(merged_stations_output_path)
+            except Exception:
+                pass
         # Converting to milimeters
         if self.data_type == 'PRCP':
 #            self.log.Wrap('Converting PRCP values to milimeters...')
@@ -1158,7 +1166,10 @@ class Main(object):
             converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{}.csv".format(units))
             if os.path.isfile(converted_stations_output_path) is False:
                 self.log.Wrap('Saving "merged_stations_converted_to_mm.csv" data to output folder...')
-                self.finalDF.to_csv(converted_stations_output_path)
+                try:
+                    self.finalDF.to_csv(converted_stations_output_path)
+                except Exception:
+                    pass
         self.log.print_separator_line()
 
         # Calculate rolling 30 day sum for the DataFrame
