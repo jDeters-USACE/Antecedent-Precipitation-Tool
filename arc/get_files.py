@@ -202,6 +202,12 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
     local_version_patch = 0
     log = JLog.PrintLog()
     download_dir, file_name = os.path.split(local_file_path)
+    if not local_check_file is None:
+        exists_already = os.path.exists(local_check_file)
+    else:
+        exists_already = os.path.exists(local_file_path)
+    if not exists_already:
+        download = True
     # Check Web Version
     if version_url is not None:
         version_dir, version_name = os.path.split(version_local_path)
@@ -210,16 +216,15 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
         version_local_file_exists = os.path.exists(version_local_path)
         if version_local_file_exists:
             local_version_major, local_version_minor, local_version_patch = parse_version(version_file_path=version_local_path)
-        if download is False:
-            # Compare local and web versions
-            if web_version_major > local_version_major:
+        # Compare local and web versions
+        if web_version_major > local_version_major:
+            download = True
+        elif web_version_major == local_version_major:
+            if web_version_minor > local_version_minor:
                 download = True
-            elif web_version_major == local_version_major:
-                if web_version_minor > local_version_minor:
+            elif web_version_minor == local_version_minor:
+                if web_version_patch > local_version_patch:
                     download = True
-                if web_version_minor == local_version_minor:
-                    if web_version_patch > local_version_patch:
-                        download = True
     if download is True:
         log.print_section('Checking for updates to {}'.format(file_name))
         log.Wrap('  Local version = {}.{}.{}'.format(local_version_major, local_version_minor, local_version_patch))

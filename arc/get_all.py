@@ -110,23 +110,15 @@ def ensure_wbd_folder():
     local_file_path = os.path.join(gis_folder, "WBD.zip")
     wbd_folder = os.path.join(gis_folder, "WBD")
     wbd_Exists = os.path.exists(wbd_folder)
-    if not wbd_Exists:
-        try:
-            os.remove(local_file_path)
-        except Exception:
-            pass
-        get_files.ensure_file_exists(file_url=file_url,
+    version_folder = os.path.join(ROOT_FOLDER, 'v')
+    local_version_file = os.path.join(version_folder, 'wbd')
+    web_version_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/v/wbd'
+    get_files.get_only_newer_version(file_url=file_url,
                                      local_file_path=local_file_path,
+                                     local_check_file=wbd_folder,
+                                     version_url=web_version_url,
+                                     version_local_path=local_version_file,
                                      extract_path=wbd_folder)
-    else:
-        version_folder = os.path.join(ROOT_FOLDER, 'v')
-        local_version_file = os.path.join(version_folder, 'wbd')
-        web_version_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/v/wbd'
-        get_files.get_only_newer_version(file_url=file_url,
-                                         local_file_path=local_file_path,
-                                         version_url=web_version_url,
-                                         version_local_path=local_version_file,
-                                         extract_path=wbd_folder)
 
 def ensure_us_shp_folder():
     gis_folder = os.path.join(ROOT_FOLDER, 'GIS')
