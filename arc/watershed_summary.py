@@ -287,24 +287,38 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     inputs_table.scale(1, 1)
 
     # Create Intermediate Data Table
+    try:
+        # Tests if huc is an actual huc or custom watershed
+        huc_test = float(huc)
+        watershed_name_label = 'Hydrologic Unit Code'
+        watershed_name_column_width = 0.24
+    except Exception:
+        # Values for Custom Watershed (Float convert failed)
+        watershed_name_label = 'Custom Watershed Name'
+        name_length = len(huc)
+        if name_length < 22:
+            watershed_name_column_width = .34
+        elif name_length < 30:
+            watershed_name_column_width = .40
+        else:
+            watershed_name_column_width = 0.5
+        watershed_name_column_width = name_length / 62
     num_sampling_points = len(results_list)
     intermediate_table_values = [
-        ['Hydrologic Unit Code', huc],
+        [watershed_name_label, huc],
         ['Watershed Size', r'{} mi$^2$'.format(huc_size)],
         ['# Random Sampling Points', num_sampling_points]
     ]
-
     # Create Intermediate Data Table Colors
     intermediate_table_colors = [
         [light_grey, white],
         [light_grey, white],
         [light_grey, white]
     ]
-
     # Plot intermediate_data_table
     intermediate_data_table = ax2.table(cellText=intermediate_table_values,
                                         cellColours=intermediate_table_colors,
-                                        colWidths=[0.40, 0.225],
+                                        colWidths=[0.40, watershed_name_column_width],
                                         cellLoc='center',
                                         loc='lower center')
     intermediate_data_table.auto_set_font_size(False)
@@ -496,6 +510,7 @@ if __name__ == '__main__':
     # Don't save
 #    WATERSHED_SUMMARY_PATH = None
 
+    # Normal HUC Run
     create_summary(site_lat="38.4008283",
                    site_long="-120.8286800",
                    observation_date="2020-02-10",
@@ -504,7 +519,19 @@ if __name__ == '__main__':
                    huc_size=1266.29,
                    results_list=RESULTS_LIST,
                    watershed_summary_path=WATERSHED_SUMMARY_PATH)
+
+    # Custom Watershed Run
+#    create_summary(site_lat="38.4008283",
+#                   site_long="-120.8286800",
+#                   observation_date="2020-02-10",
+#                   geographic_scope='Custom Polygon',
+#                   huc='Cosumnes River (ESRI)',
+#                   huc_size=1266.29,
+#                   results_list=RESULTS_LIST,
+#                   watershed_summary_path=WATERSHED_SUMMARY_PATH)
     
     if WATERSHED_SUMMARY_PATH:
         import subprocess
         subprocess.Popen(WATERSHED_SUMMARY_PATH, shell=True)
+
+len('Cosumnes River (ESRI)')
