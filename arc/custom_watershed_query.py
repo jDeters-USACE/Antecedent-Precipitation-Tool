@@ -158,12 +158,14 @@ def shapefile_sample(lat, lon, shapefile):
     if not horizontal_units.lower() in supported_units:
         # Transform geometry to Albers
         selected_feature_geometry.Transform(transform_source_to_albers)
+        transform_back = transform_albers_to_wgs
         # Update horizontal units
         geo_ref = selected_feature_geometry.GetSpatialReference()
         horizontal_units = findHorizontalUnits(str(geo_ref))
     if horizontal_units.lower() in supported_units:
         # Calculate Area
         selected_huc_area = selected_feature_geometry.GetArea()
+        transform_back = rtran
         # Convert Area to Square Miles
         if horizontal_units.lower() in ['meter', 'meters']:
             huc_square_miles = selected_huc_area / 2590000
@@ -172,9 +174,8 @@ def shapefile_sample(lat, lon, shapefile):
         huc_square_miles = round(huc_square_miles, 2)
 
     # Determine Sampling Distance and point spacing
-    num_points = huc_square_miles / 20
-    num_points = int(round(num_points, 0))    
     sampling_point_spacing_miles = round((huc_square_miles / 633.145), 2)
+    sampling_point_spacing_miles = 3.75
     if sampling_point_spacing_miles < 1:
         sampling_point_spacing_miles = 1
     if horizontal_units.lower() in ['meter', 'meters']:
@@ -260,7 +261,7 @@ def shapefile_sample(lat, lon, shapefile):
                 num_points -= 1
                 points_selected += 1
                 previously_selected_points.append(test_pt)
-                [wgs_lon, wgs_lat, z] = transform_albers_to_wgs.TransformPoint(test_x, test_y)
+                [wgs_lon, wgs_lat, z] = transform_back.TransformPoint(test_x, test_y)
                 wgs_lat = round(wgs_lat, 6)
                 wgs_lon = round(wgs_lon, 6)
                 coordinates_within_polygon.append([wgs_lat, wgs_lon])
@@ -275,9 +276,10 @@ if __name__ == '__main__':
     import time
     start_time = time.clock()
     SCRATCH_FOLDER = os.path.join(ROOT, 'Scratch')
-    SHAPEFILE = os.path.join(SCRATCH_FOLDER, '')
-    sampling_points, huc_square_miles = shapefile_sample(lat=38.325033,
-                                                         lon=-121.356081,
+    WATERSHED_FOLDER = os.path.join(SCRATCH_FOLDER, 'Cosumnes River Watershed (ESRI)')
+    SHAPEFILE = os.path.join(WATERSHED_FOLDER, 'Cosumnes_River_Watershed.shp')
+    sampling_points, huc_square_miles = shapefile_sample(lat=38.3315574,
+                                                         lon=-121.3622894,
                                                          shapefile=SHAPEFILE)
     print(huc_square_miles)
     for point in sampling_points:
