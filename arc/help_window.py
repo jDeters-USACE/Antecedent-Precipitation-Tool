@@ -208,13 +208,13 @@ class Main(object):
                            youtube_url="")
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using the USGS Watershed Boundary Dataset:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Watershed - WBD.pdf'),
+                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - WBD.pdf",
                            youtube_url="")
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using a custom Watershed Polygon:',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Watershed - Custom.pdf'),
+                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - Custom.pdf",
                            youtube_url="")
         self.add_separator(self.central_buttons_frame)
 
@@ -287,21 +287,17 @@ class Main(object):
         # Create/Grid PDF BUTTON
         if pdf_local_path is not None:
             def open_pdf_reference():
-                exists = os.path.exists(pdf_local_path)
-                if not exists:
-                    local_file_name = os.path.split(pdf_local_path)[1]
-                    local_file_name_no_ext = os.path.splitext(local_file_name)[0]
-                    module_path = os.path.dirname(os.path.realpath(__file__))
-                    root = os.path.dirname(module_path)
-                    version_folder = os.path.join(root, 'v')
-                    version_local_path = os.path.join(version_folder, local_file_name_no_ext)
-                    version_url = 'https://raw.githubusercontent.com/jDeters-USACE/Antecedent-Precipitation-Tool/master/v/{}'.format(local_file_name_no_ext)
-                    get_files.get_only_newer_version(file_url=pdf_url,
-                                                     local_file_path=pdf_local_path,
-                                                     version_local_path=version_local_path,
-                                                     )
-                    get_files.ensure_file_exists(file_url=pdf_url,
-                                                 local_file_path=pdf_local_path)
+                local_file_name = os.path.split(pdf_local_path)[1]
+                local_file_name_no_ext = os.path.splitext(local_file_name)[0]
+                module_path = os.path.dirname(os.path.realpath(__file__))
+                root = os.path.dirname(module_path)
+                version_folder = os.path.join(root, 'v')
+                version_local_path = os.path.join(version_folder, local_file_name_no_ext)
+                version_url = 'https://raw.githubusercontent.com/jDeters-USACE/Antecedent-Precipitation-Tool/master/v/{}'.format(local_file_name_no_ext)
+                get_files.get_only_newer_version(file_url=pdf_url,
+                                                 local_file_path=pdf_local_path,
+                                                 version_url=version_url,
+                                                 version_local_path=version_local_path)
                 pdf_name = os.path.split(pdf_local_path)[1]
                 print('Opening {}...'.format(pdf_name))
                 time.sleep(2)
