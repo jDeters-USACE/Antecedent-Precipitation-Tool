@@ -242,6 +242,11 @@ class Main(object):
                            pdf_local_path="",
                            pdf_url="",
                            youtube_url=None)
+        self.add_reference(frame='Methodology',
+                           title='Accessing and Using Meteorological Data to Evaluate Wetland Hydrology (Sprecher and Warne, 2000):',
+                           pdf_local_path=os.path.join(docs_folder, 'Sprecher and Warne.pdf'),
+                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/Sprecher and Warne.pdf",
+                           youtube_url=None)
         self.add_separator(self.central_buttons_frame)
 
 
