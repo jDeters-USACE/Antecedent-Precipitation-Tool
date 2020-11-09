@@ -168,27 +168,27 @@ class Main(object):
                            title='How to read the output of a single-point analysis:',
                            pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Single-Point Analysis.pdf'),
                            pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Single-Point Analysis.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for a given date:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Single Point - Single Date.pdf'),
                            pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Single Date.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for several dates at once:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Multiple Dates.pdf"),
                            pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Multiple Dates.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for many dates using a spreadsheet:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf"),
                            pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis at a daily frequency for a given date range:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Daily Frequency Date Range.pdf"),
                            pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Daily Frequency Date Range.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_separator(self.central_buttons_frame)
 
 
@@ -205,17 +205,17 @@ class Main(object):
                            title='How to read the output of a Watershed analysis:',
                            pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Watershed Analysis.pdf'),
                            pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Watershed Analysis.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using the USGS Watershed Boundary Dataset:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Watershed - WBD.pdf'),
                            pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - WBD.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using a custom Watershed Polygon:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Watershed - Custom.pdf'),
                            pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - Custom.pdf",
-                           youtube_url="")
+                           youtube_url=None)
         self.add_separator(self.central_buttons_frame)
 
         #---METHODOLOGY---#
@@ -229,18 +229,13 @@ class Main(object):
         # Create/Grid ITEMS for WATERSHED SCALE USAGE
         self.add_reference(frame='Methodology',
                            title='User Guide (Narrative Format):',
-                           pdf_local_path="",
-                           pdf_url="",
-                           youtube_url=None)
-        self.add_reference(frame='Methodology',
-                           title='FAQ Document - (Frequently Asked Questions):',
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, 'APT - User Guide.pdf'),
+                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - User Guide.pdf",
                            youtube_url=None)
         self.add_reference(frame='Methodology',
                            title="Detailed Methodology - Step-by-step Description the Entire Process:",
-                           pdf_local_path="",
-                           pdf_url="",
+                           pdf_local_path=os.path.join(docs_folder, 'APT - Detailed Methodology.pdf'),
+                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - Detailed Methodology.pdf",
                            youtube_url=None)
         self.add_reference(frame='Methodology',
                            title='Accessing and Using Meteorological Data to Evaluate Wetland Hydrology (Sprecher and Warne, 2000):',
@@ -255,7 +250,7 @@ class Main(object):
         # Create/Grid Close Button
         self.button_close = ttk.Button(self.primary_frame,
                                        text="Close This Window",
-                                       command=self.click_close_button)        
+                                       command=self.click_close_button)
         self.button_close.grid(row=self.row, column=0, pady=12, padx=100, sticky='w')
 
         # Create/Grid Close Button
