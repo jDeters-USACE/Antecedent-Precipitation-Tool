@@ -1,15 +1,15 @@
 #  This software was developed by United States Army Corps of Engineers (USACE)
 #  employees in the course of their official duties.  USACE used copyrighted,
-#  open source code to develop this software, as such this software 
+#  open source code to develop this software, as such this software
 #  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
 #  portions of the software developed by USACE employees in the course of their
 #  official duties are not subject to copyright protection and are in the public
 #  domain.
-#  
+#
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
-#  
+#  quality, reliability, or any other characteristic.
+#
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
 #  fitness for a particular purpose, and noninfringement.  In no event shall the
@@ -17,12 +17,12 @@
 #  liability, whether in an action of contract, tort or otherwise, arising from,
 #  out of or in connection with the software or the use or other dealings in the
 #  software.
-#  
+#
 #  Public domain portions of this software can be redistributed and/or modified
 #  freely, provided that any derivative works bear some notice that they are
 #  derived from it, and any modified versions bear some notice that they have
-#  been modified. 
-#  
+#  been modified.
+#
 #  Copyrighted portions of the software are annotated within the source code.
 #  Open Source Licenses, included in the source code, apply to the applicable
 #  copyrighted portions.  Copyrighted portions of the software are not in the
@@ -369,7 +369,7 @@ class Main(object):
         self.old_all_sampling_coordinates = None
         self.all_sampling_coordinate_elevations = None
         # Test USGS EPQS Servers
-        self.epqs_variant = test_usgs_epqs_servers() 
+        self.epqs_variant = test_usgs_epqs_servers()
 
     def set_yMax(self, yMax):
         self.log.Wrap('Setting yMax to ' + str(yMax))
@@ -782,7 +782,7 @@ class Main(object):
                     count_copy += 1
                 else:
                     # Get another chance to download missing data while waiting
-                    if result.data is None: 
+                    if result.data is None:
                         result.run()
                     self.stations.append(result)
                     self.recentStations.append(result)
@@ -1052,7 +1052,7 @@ class Main(object):
                     if self.save_folder is not None:
                         # Generate output
                         try:
-                            station_csv_name = '{}.csv'.format(best_station.name).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
+                            station_csv_name = '{}_{}.csv'.format(best_station.name,self.dates.observation_date).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
                             station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
                             if os.path.isfile(station_csv_path) is False:
                                 self.log.Wrap('Saving station data to CSV in output folder...')
@@ -1135,10 +1135,10 @@ class Main(object):
             except Exception:
                 pass
             # Generate output
-            merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations.csv")
+            merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_{0}.csv".format(self.dates.observation_date))
             try:
                 if os.path.isfile(merged_stations_output_path) is False:
-                    self.log.Wrap('Saving "merged_stations.csv" data to output folder...')
+                    self.log.Wrap('Saving "merged_stations_{0}.csv" data to output folder...'.format(self.dates.observation_date))
                     self.finalDF.to_csv(merged_stations_output_path)
             except Exception:
                 pass
@@ -1163,9 +1163,9 @@ class Main(object):
         # Save converted finalDF to CSV in output directory
         if self.save_folder is not None:
             # Generate output
-            converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{}.csv".format(units))
+            converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{0}_{1}.csv".format(units,self.dates.observation_date))
             if os.path.isfile(converted_stations_output_path) is False:
-                self.log.Wrap('Saving "merged_stations_converted_to_mm.csv" data to output folder...')
+                self.log.Wrap('Saving "merged_stations_converted_to_{0}_{1}.csv" data to output folder...'.format(units,self.dates.observation_date))
                 try:
                     self.finalDF.to_csv(converted_stations_output_path)
                 except Exception:
@@ -1207,7 +1207,7 @@ class Main(object):
         following_water_year_dates = pandas.date_range(self.dates.following_water_year_start_date, self.dates.following_water_year_end_date)
         # Get all days Upper and Lower Normal values for the current water year
         following_normal_low_series, following_normal_high_series = calc_normal_values(dates=following_water_year_dates, values=allDays)
-        
+
         # Append current year to prior year to create final output
         normal_low_series = prior_normal_low_series.append(current_normal_low_series).append(following_normal_low_series)
         normal_high_series = prior_normal_high_series.append(current_normal_high_series.append(following_normal_high_series))
@@ -1843,15 +1843,38 @@ if __name__ == '__main__':
                   None,
                   SAVE_FOLDER,
                   False]
-    INPUT_LIST = ['PRCP',
-                  '62.235095',
-                  '-159.057434',
-                  2018,
-                  10,
-                  15,
-                  None,
-                  None,
-                  SAVE_FOLDER,
-                  False]
-    INSTANCE.setInputs(INPUT_LIST, watershed_analysis=False, all_sampling_coordinates=None)
+    INPUT_LIST = [
+                  ['PRCP', '38.5', '-121.5', 1935, 5, 15, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1940, 2, 29, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1941, 2, 28, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1942, 12, 7, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1943, 6, 12, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1944, 7, 19, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1945, 8, 21, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1950, 3, 15, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1951, 6, 16, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1952, 7, 4, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1965, 1, 1, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1971, 5, 28, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1973, 7, 4, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1978, 11, 21, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1981, 12, 2, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1984, 4, 24, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1985, 9, 13, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1989, 5, 18, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1998, 12, 1, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 2020, 6, 20, None, None, SAVE_FOLDER, False],
+                  ]
+    # INPUT_LIST = ['PRCP',
+    #               '62.235095',
+    #               '-159.057434',
+    #               2018,
+    #               10,
+    #               15,
+    #               None,
+    #               None,
+    #               SAVE_FOLDER,
+    #               False]
+    for i in INPUT_LIST:
+        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None)
     input('Stall for debugging.  Press enter or click X to close')
