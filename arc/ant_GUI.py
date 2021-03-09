@@ -1,15 +1,15 @@
 #  This software was developed by United States Army Corps of Engineers (USACE)
 #  employees in the course of their official duties.  USACE used copyrighted,
-#  open source code to develop this software, as such this software 
+#  open source code to develop this software, as such this software
 #  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
 #  portions of the software developed by USACE employees in the course of their
 #  official duties are not subject to copyright protection and are in the public
 #  domain.
-#  
+#
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
-#  
+#  quality, reliability, or any other characteristic.
+#
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
 #  fitness for a particular purpose, and noninfringement.  In no event shall the
@@ -17,12 +17,12 @@
 #  liability, whether in an action of contract, tort or otherwise, arising from,
 #  out of or in connection with the software or the use or other dealings in the
 #  software.
-#  
+#
 #  Public domain portions of this software can be redistributed and/or modified
 #  freely, provided that any derivative works bear some notice that they are
 #  derived from it, and any modified versions bear some notice that they have
-#  been modified. 
-#  
+#  been modified.
+#
 #  Copyrighted portions of the software are annotated within the source code.
 #  Open Source Licenses, included in the source code, apply to the applicable
 #  copyrighted portions.  Copyrighted portions of the software are not in the
@@ -131,7 +131,7 @@ class Main(object):
         self.ncdc_working = False
         # Define Local Variables
         root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        
+
         # Create PrintLog
         self.L = JLog.PrintLog(Delete=True)
         # Announce GUI
@@ -267,7 +267,7 @@ class Main(object):
 # Reverse compatibility ITEMS (For the non-compiled version)
         self.BUTTON_BROWSE_DIR = tkinter.ttk.Button(self.master, text='Browse', command=self.ask_directory, image=self.folder_image)
         self.ENTRY_OUTPUT_FOLDER = tkinter.ttk.Entry(self.master)
-        default_save_folder = os.path.join(ROOT,'Outputs') 
+        default_save_folder = os.path.join(ROOT,'Outputs')
         self.ENTRY_OUTPUT_FOLDER.insert(0, default_save_folder)
         self.ENTRY_IMAGE_NAME = tkinter.ttk.Entry(self.master)
         self.ENTRY_IMAGE_SOURCE = tkinter.ttk.Entry(self.master)
@@ -440,7 +440,7 @@ class Main(object):
         self.date_separators.append(date_separator)
 
     def setup_csv_input(self):
-        # Create/Grid 
+        # Create/Grid
         self.upper_label_csv = tkinter.ttk.Label(self.dates_frame, text='Use a CSV file to run many dates at once')
         self.upper_label_csv.grid(row=0, column=0, columnspan=5, sticky='nesw', padx=45)
         date_separator = tkinter.ttk.Separator(self.dates_frame, orient="horizontal", style="Line.TSeparator")
@@ -501,7 +501,7 @@ class Main(object):
             try:
                 self.date_separators.remove(item)
             except Exception:
-                pass            
+                pass
 
     def watershed_selection(self, event):
         """Acts on the self.watershed_scope_menu drop-down selection"""
@@ -824,7 +824,7 @@ class Main(object):
             # Get date values
             observation_day = test_datetime.strftime('%d')
             observation_month = test_datetime.strftime('%m')
-            observation_year = test_datetime.strftime('%Y')            
+            observation_year = test_datetime.strftime('%Y')
             params.append(latitude)
             params.append(longitude)
             params.append(observation_year)
@@ -923,7 +923,7 @@ class Main(object):
             else:
                 self.calculate_or_add_batch(False, params)
         if watershed_scale == 'Single Point':
-            self.calculate_or_add_batch(False, params)    
+            self.calculate_or_add_batch(False, params)
     # End batch_from_csv method
 
 
@@ -1278,7 +1278,7 @@ class Main(object):
 #-WATERSHED END
             ### - INDIVIDUAL PROCESS OR BATCH ITERATION - ###
             current_input_list_list = list(input_list_list)
-            
+
             if not len(input_list_list) > 1:
                 self.L.print_title("SINGLE POINT ANALYSIS")
                 run_list = input_list + [save_folder, forecast_enabled]
@@ -1381,9 +1381,9 @@ class Main(object):
                                            LogOnly=True)
                 # Write first line of CSV
                 if watershed_scale == 'Single Point':
-                    csv_writer.Wrap('Latitude,Longitude,Date,PDSI Value,PDSI Class,Season,ARC Score,Antecedent Precip Condition')
+                    csv_writer.Wrap('Latitude,Longitude,Date,PDSI Value,PDSI Class,Season,Antecedent Precip Score,Antecedent Precip Condition')
                 else:
-                    csv_writer.Wrap('Latitude,Longitude,Date,PDSI Value,PDSI Class,Season,ARC Score,Antecedent Precip Condition')
+                    csv_writer.Wrap('Latitude,Longitude,Date,PDSI Value,PDSI Class,Season,Antecedent Precip Score,Antecedent Precip Condition')
                 # Create watershed_summary results_list
                 watershed_results_list = []
                 # Set PDF Counter and Part Counter to 0
@@ -1444,7 +1444,7 @@ class Main(object):
                                                                                              all_items[10], # PDSI Value
                                                                                              all_items[11], # PDSI Class
                                                                                              all_items[12], # Season
-                                                                                             all_items[14], # ARC Score
+                                                                                             all_items[14], # Antecedent Precip Score
                                                                                              all_items[13])) # Antecedent Precip Condition
                             else:
                                 watershed_results_list.append((ante_score, condition, wet_dry_season, palmer_class))
@@ -1456,7 +1456,7 @@ class Main(object):
                                                                                        all_items[10], # PDSI Value
                                                                                        all_items[11], # PDSI Class
                                                                                        all_items[12], # Season
-                                                                                       all_items[14], # ARC Score
+                                                                                       all_items[14], # Antecedent Precip Score
                                                                                        all_items[13])) # Antecedent Precip Condition
                         else:
                             # Open PDF in new process
@@ -1661,7 +1661,7 @@ class DateEntry(tkinter.Frame):
                 print(' ')
                 print('Year cannot be greater than {}!'.format(self.two_days_prior_year))
         return entry_text
-    
+
     def _month_eval(self):
         self.month_problem = False
         entry_text = self.entry_month.get()
@@ -1672,7 +1672,7 @@ class DateEntry(tkinter.Frame):
                 print(' ')
                 print('Month cannot be more than 12!')
         return entry_text
-    
+
     def _day_eval(self):
         self.day_problem = False
         entry_text = self.entry_day.get()
@@ -1683,7 +1683,7 @@ class DateEntry(tkinter.Frame):
                 print('')
                 print('Day cannot be more than 31!')
         return entry_text
-    
+
 
     def _entry_year_check(self, e):
         self.year_testable = True
