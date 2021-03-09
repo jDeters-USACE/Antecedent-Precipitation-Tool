@@ -1097,7 +1097,7 @@ class Main(object):
                     if self.save_folder is not None:
                         # Generate output
                         try:
-                            station_csv_name = '{}.csv'.format(station.name).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
+                            station_csv_name = '{}_{}.csv'.format(best_station.name,self.dates.observation_date).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
                             station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
                             if os.path.isfile(station_csv_path) is False:
                                 self.log.Wrap('Saving station data to CSV in output folder...')
@@ -1181,10 +1181,10 @@ class Main(object):
             except Exception:
                 pass
             # Generate output
-            merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations.csv")
+            merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_{0}.csv".format(self.dates.observation_date))
             try:
                 if os.path.isfile(merged_stations_output_path) is False:
-                    self.log.Wrap('Saving "merged_stations.csv" data to output folder...')
+                    self.log.Wrap('Saving "merged_stations_{0}.csv" data to output folder...'.format(self.dates.observation_date))
                     self.finalDF.to_csv(merged_stations_output_path)
             except Exception:
                 pass
@@ -1209,9 +1209,9 @@ class Main(object):
         # Save converted finalDF to CSV in output directory
         if self.save_folder is not None:
             # Generate output
-            converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{}.csv".format(units))
+            converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{0}_{1}.csv".format(units,self.dates.observation_date))
             if os.path.isfile(converted_stations_output_path) is False:
-                self.log.Wrap('Saving "merged_stations_converted_to_mm.csv" data to output folder...')
+                self.log.Wrap('Saving "merged_stations_converted_to_{0}_{1}.csv" data to output folder...'.format(units,self.dates.observation_date))
                 try:
                     self.finalDF.to_csv(converted_stations_output_path)
                 except Exception:
@@ -1907,14 +1907,37 @@ if __name__ == '__main__':
     #               SAVE_FOLDER,
     #               False]
     INPUT_LIST = ['PRCP',
-                  '33.209205',
-                  '-87.499375',
-                  2020,
+                  '38.5',
+                  '-121.5',
+                  2018,
                   10,
                   15,
                   None,
                   None,
                   SAVE_FOLDER,
                   False]
-    INSTANCE.setInputs(INPUT_LIST, watershed_analysis=False, all_sampling_coordinates=None)
+    INPUT_LIST = [
+                  ['PRCP', '38.5', '-121.5', 1935, 5, 15, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1940, 2, 29, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1941, 2, 28, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1942, 12, 7, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1943, 6, 12, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1944, 7, 19, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1945, 8, 21, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1950, 3, 15, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1951, 6, 16, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1952, 7, 4, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1965, 1, 1, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1971, 5, 28, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1973, 7, 4, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1978, 11, 21, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1981, 12, 2, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1984, 4, 24, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1985, 9, 13, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1989, 5, 18, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 1998, 12, 1, None, None, SAVE_FOLDER, False],
+                  ['PRCP', '38.5', '-121.5', 2020, 6, 20, None, None, SAVE_FOLDER, False],
+                  ]
+    for i in INPUT_LIST:
+        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None)
     input('Stall for debugging.  Press enter or click X to close')
