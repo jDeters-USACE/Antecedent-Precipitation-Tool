@@ -48,6 +48,7 @@ import traceback
 import warnings
 import pickle
 import stat
+from operator import itemgetter
 
 # Get root folder
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -855,7 +856,7 @@ class Main(object):
         if self.data_type == 'PRCP':
             # MAKING EARLY REQUESTS BELOW TO USE THIS DOWNTIME
             try:
-                # Querry PDSI
+                # Query PDSI
                 palmer_value, palmer_class, palmer_color, self.pdsidv_file = query_climdiv.get_pdsidv(lat=float(self.site_lat),
                                                                                                       lon=float(self.site_long),
                                                                                                       year=self.dates.observation_year,
@@ -866,7 +867,7 @@ class Main(object):
                                              lon=float(self.site_long),
                                              month=int(self.dates.observation_month),
                                              output_folder=None,
-#                                             output_folder=self.folderPath,
+                                             # output_folder=self.folderPath,
                                              watershed_analysis=self.watershed_analysis)
                 del palmer_value, palmer_class, palmer_color
                 # Query all Elevations
@@ -877,11 +878,34 @@ class Main(object):
                 self.log.Wrap(traceback.format_exc())
         # Maintain processing pool until all jobs are complete and collect results
         self.finish_multiprocessing(tasks_queue, results_queue, minions, enqueue_count)
-        # Sort stations by weighted difference
+
+        # find the primary station after multiprocessing finishes
+        need_primary = True
+        primary_station = self.getBest(need_primary=need_primary)
+        print(primary_station.location)
+        secondary_stations_sorted_list = []
+        if primary_station is not None:
+            # Note that the primary station has been found
+            if need_primary is True:
+                need_primary = False
+        # If stations are not the primary station, sort stations by weighted difference
         sorted_stations = []
         for station in self.stations:
-            sorted_stations.append([station.weightedDiff, station])
+            # loop through non-primary-stations and recalculate distance, etc.
+            # based off of distance from primary station
+            if station.name != primary_station.name:
+                distance = great_circle(primary_station.location, station.location).miles
+                distance = round(distance, 3)
+                station.distance = distance
+                elevDiff = round((primary_station.elevation - station.elevation), 3)
+                elevDiff = abs(elevDiff)
+                station.elevDiff = elevDiff
+                weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
+                station.weightedDiff = weightedDiff
+                sorted_stations.append([station.weightedDiff, station])
         sorted_stations.sort(key=lambda x: x[0], reverse=False)
+        # insert primary station at the top of the list
+        sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
         self.stations = []
         self.log.Wrap('Looking for stations missing data...')
         for sort_list in sorted_stations:
@@ -976,16 +1000,20 @@ class Main(object):
 
     def createFinalDF(self):
         # Start to Build Stations Table (continues during iteration below)
-        station_table_column_labels = ["Weather Station Name",
+        station_table_column_labels =[["Weather Station Name",
                                        "Coordinates",
                                        "Elevation (ft)",
                                        "Distance (mi)",
                                        r"Elevation $\Delta$",
                                        r"Weighted $\Delta$",
-                                       "Normal Records",
-                                       "Rolling Records"]
-        station_table_values = [["Weather Station Name", "Coordinates", "Elevation (ft)", "Distance (mi)",
-                                 r"Elevation $\Delta$", r"Weighted $\Delta$", "Days (Normal)", "Days (Antecedent)"]]
+                                       "Days Normal",
+                                       "Days Antecedent"]]
+
+        # JLG commented this out
+        # station_table_values = [["Weather Station Name", "Coordinates", "Elevation (ft)", "Distance (mi)",
+        #                          r"Elevation $\Delta$", r"Weighted $\Delta$", "Days (Normal)", "Days (Antecedent)"]]
+
+        station_table_values = [] # added by JLG
 
         # CREATE EMPTY DATAFRAME (self.finalDF)
         self.log.Wrap("")
@@ -1001,33 +1029,36 @@ class Main(object):
         # Fill in NaN using top station
         n = 0
         num_stations_used = 0
-        need_primary = True
         if float(self.site_lat) < 50:
             maxSearchDistance = 60      # Maximum distance between observation point and station location
         else: # In AK, where stations are very rare
             maxSearchDistance = 300
         maxNumberOfStations = 15    # Maximum number of stations to use to complete record
         while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
-            n += 1
-            if n == 1:
-                self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
-            if self.searchDistance > 60:
-                need_primary = False
-            best_station = self.getBest(need_primary=need_primary)
-            if best_station is not None:
-                # Note that the primary station has been found
-                if need_primary is True:
+            for station in self.stations:
+                print(station)
+                n += 1
+                if n == 1:
+                    self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
+                if self.searchDistance > 60:
                     need_primary = False
-                # Get baseline null value count
+                # best_station = self.getBest(need_primary=need_primary)
+                # if best_station is not None:
+                    # Note that the primary station has been found
+                    # if need_primary is True:
+                    #     need_primary = False
+                    #     primary_station = best_station # added by JLG
+                        # recalcuate and set source
+                    # Get baseline null value count
                 missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
                 missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-                values = best_station.Values
-                self.log.Wrap('Attempting to replace null values with values from {}...'.format(best_station.name))
+                values = station.Values
+                self.log.Wrap('Attempting to replace null values with values from {}...'.format(station.name))
                 # Fill
                 try:
                     self.finalDF.fillna(values, inplace=True)
                 except ValueError:
-                    self.log.Wrap('ERROR: No values found for {}. Station will be skipped.'.format(best_station.name))
+                    self.log.Wrap('ERROR: No values found for {}. Station will be skipped.'.format(station.name))
                 missingAfter = self.finalDF.isnull().sum().sum()
                 self.log.Wrap(str(missingAfter) + ' null values remaining.')
                 missing_after_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
@@ -1036,18 +1067,32 @@ class Main(object):
                 num_rows_antecedent = missing_before_antecedent-missing_after_antecedent
                 num_rows = num_rows_normal + num_rows_antecedent
                 if num_rows > 0:
-                    num_stations_used += 1
-                    # BUILD STATIONS TABLE
-                    vals = []
-                    vals.append(best_station.name)
-                    vals.append(best_station.location)
-                    vals.append(best_station.elevation)
-                    vals.append(best_station.distance)
-                    vals.append(best_station.elevDiff)
-                    vals.append(best_station.weightedDiff)
-                    vals.append(num_rows_normal)
-                    vals.append(num_rows_antecedent)
-                    station_table_values.append(vals)
+                    if n == 1: # n=1 should be the primary station in the station list
+                        num_stations_used += 1
+                        # BUILD STATIONS TABLE
+                        vals = []
+                        vals.append(station.name)
+                        vals.append(station.location)
+                        vals.append(station.elevation)
+                        vals.append("{0}*".format(station.distance))
+                        vals.append("{0}*".format(station.elevDiff))
+                        vals.append("{0}*".format(station.weightedDiff))
+                        vals.append(num_rows_normal)
+                        vals.append(num_rows_antecedent)
+                        station_table_values.append(vals)
+                    else:
+                        num_stations_used += 1
+                        # BUILD STATIONS TABLE
+                        vals = []
+                        vals.append(station.name)
+                        vals.append(station.location)
+                        vals.append(station.elevation)
+                        vals.append(station.distance)
+                        vals.append(station.elevDiff)
+                        vals.append(station.weightedDiff)
+                        vals.append(num_rows_normal)
+                        vals.append(num_rows_antecedent)
+                        station_table_values.append(vals)
                     # SAVE RESULTS TO CSV IN OUTPUT DIRECTORY
                     if self.save_folder is not None:
                         # Generate output
@@ -1056,10 +1101,10 @@ class Main(object):
                             station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
                             if os.path.isfile(station_csv_path) is False:
                                 self.log.Wrap('Saving station data to CSV in output folder...')
-                                best_station.Values.to_csv(station_csv_path)
+                                station.Values.to_csv(station_csv_path)
                         except Exception:
                             pass # Will add an announcement that station data save failed later
-            else:
+            if self.finalDF.isnull().sum().sum() > 0:
                 self.log.Wrap("")
                 self.log.Wrap("No suitable station available to replace null values.")
                 if float(self.site_lat) < 50:
@@ -1118,6 +1163,7 @@ class Main(object):
 
         if self.finalDF.isnull().sum().sum() < 1:
             self.log.Wrap('No null values within self.finalDF')
+
         else:
             if self.data_type is not 'PRCP':
                 self.log.Wrap('Since this is not for PRCP... filling null values with "0" to allow graph output...')
@@ -1512,6 +1558,9 @@ class Main(object):
         fig = plt.figure(figsize=(17, 11))
         fig.set_facecolor('0.77')
         fig.set_dpi(140)
+        # add a footer to the station table to describe the asterisk.
+        footer_text = '*This station is considered the primary station and these values are generated in relation to the location of interest.'
+        fig.text(0.51,0.31, footer_text, fontsize=10, color="black")
         if self.data_type == 'PRCP':
         #    if num_stations_used < 14:
             ax1 = plt.subplot2grid((9, 10), (0, 0), colspan=10, rowspan=6)
@@ -1533,6 +1582,7 @@ class Main(object):
                 logo_file = os.path.join(images_folder, 'RD_1_0.png')
                 logo = plt.imread(logo_file)
             img = fig.figimage(X=logo, xo=118, yo=20)
+
         else:
             ax1 = plt.subplot2grid((9, 10), (0, 0), colspan=10, rowspan=7)
             ax2 = plt.subplot2grid((9, 10), (7, 3), colspan=7, rowspan=2)
@@ -1686,8 +1736,11 @@ class Main(object):
 
             # Plot Stations Table
             station_table_colors = [[light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey]]
-            for row in station_table_values[1:]:
+            for row in station_table_values[:]:
                 station_table_colors.append([white, white, white, white, white, white, white, white])
+
+            # combine the station table headers and values after sorting by distance from the location of interest
+            station_table_values = station_table_column_labels + station_table_values
 
             stations_table = ax4.table(cellText=station_table_values,
                                        cellColours=station_table_colors,
@@ -1833,6 +1886,26 @@ if __name__ == '__main__':
 #        self.image_source = inputList[7]
 #        self.SAVE_FOLDER = inputList[8]
 #        self.forecast_setting = inputList[9]
+    # INPUT_LIST = ['PRCP',
+    #               '38.5',
+    #               '-121.5',
+    #               2018,
+    #               10,
+    #               15,
+    #               None,
+    #               None,
+    #               SAVE_FOLDER,
+    #               False]
+    # INPUT_LIST = ['PRCP',
+    #               '62.235095',
+    #               '-159.057434',
+    #               2018,
+    #               10,
+    #               15,
+    #               None,
+    #               None,
+    #               SAVE_FOLDER,
+    #               False]
     INPUT_LIST = ['PRCP',
                   '38.5',
                   '-121.5',
@@ -1865,16 +1938,6 @@ if __name__ == '__main__':
                   ['PRCP', '38.5', '-121.5', 1998, 12, 1, None, None, SAVE_FOLDER, False],
                   ['PRCP', '38.5', '-121.5', 2020, 6, 20, None, None, SAVE_FOLDER, False],
                   ]
-    # INPUT_LIST = ['PRCP',
-    #               '62.235095',
-    #               '-159.057434',
-    #               2018,
-    #               10,
-    #               15,
-    #               None,
-    #               None,
-    #               SAVE_FOLDER,
-    #               False]
     for i in INPUT_LIST:
         INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None)
     input('Stall for debugging.  Press enter or click X to close')
