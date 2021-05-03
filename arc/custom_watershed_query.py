@@ -1,15 +1,15 @@
 #  This software was developed by United States Army Corps of Engineers (USACE)
 #  employees in the course of their official duties.  USACE used copyrighted,
-#  open source code to develop this software, as such this software 
+#  open source code to develop this software, as such this software
 #  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
 #  portions of the software developed by USACE employees in the course of their
 #  official duties are not subject to copyright protection and are in the public
 #  domain.
-#  
+#
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
-#  
+#  quality, reliability, or any other characteristic.
+#
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
 #  fitness for a particular purpose, and noninfringement.  In no event shall the
@@ -17,12 +17,12 @@
 #  liability, whether in an action of contract, tort or otherwise, arising from,
 #  out of or in connection with the software or the use or other dealings in the
 #  software.
-#  
+#
 #  Public domain portions of this software can be redistributed and/or modified
 #  freely, provided that any derivative works bear some notice that they are
 #  derived from it, and any modified versions bear some notice that they have
-#  been modified. 
-#  
+#  been modified.
+#
 #  Copyrighted portions of the software are annotated within the source code.
 #  Open Source Licenses, included in the source code, apply to the applicable
 #  copyrighted portions.  Copyrighted portions of the software are not in the
@@ -93,7 +93,7 @@ def findHorizontalUnits(csString):
 def shapefile_sample(lat, lon, shapefile):
     """
     Identify the HUC of a given huc_digits in which the supplied coordinates lie.
-    If selected, generate random sampling points (# and minimum spacing determined by HUC Digits) 
+    If selected, generate random sampling points (# and minimum spacing determined by HUC Digits)
     """
     # Shapefile Query Adapted from
     # https://stackoverflow.com/questions/7861196/check-if-a-geopoint-with-latitude-and-longitude-is-within-a-shapefile/13433127#13433127
@@ -145,7 +145,7 @@ def shapefile_sample(lat, lon, shapefile):
 
     # Set up a spatial filter such that the only features we see when we
     # loop through "lyr_in" are those which overlap the point defined above
-    log.Wrap(' -Filtering HUC8 features by spatial overlap with selected coordinates...')  
+    log.Wrap(' -Filtering HUC8 features by spatial overlap with selected coordinates...')
     lyr_in.SetSpatialFilter(pt)
     # Loop through the overlapped features and display the field of interest
     for feat_in in lyr_in:
@@ -158,14 +158,12 @@ def shapefile_sample(lat, lon, shapefile):
     if not horizontal_units.lower() in supported_units:
         # Transform geometry to Albers
         selected_feature_geometry.Transform(transform_source_to_albers)
-        transform_back = transform_albers_to_wgs
         # Update horizontal units
         geo_ref = selected_feature_geometry.GetSpatialReference()
         horizontal_units = findHorizontalUnits(str(geo_ref))
     if horizontal_units.lower() in supported_units:
         # Calculate Area
         selected_huc_area = selected_feature_geometry.GetArea()
-        transform_back = rtran
         # Convert Area to Square Miles
         if horizontal_units.lower() in ['meter', 'meters']:
             huc_square_miles = selected_huc_area / 2590000
@@ -206,7 +204,7 @@ def shapefile_sample(lat, lon, shapefile):
     # Announce protocol commencement
     log.Wrap('')
     log.Wrap('Generating potential sampling points and testing the above conditions...')
-    
+
     # Add initially selected coordinates as the first sampling point
     previously_selected_points.append(pt)
     coordinates_within_polygon.append([lat, lon])
@@ -228,7 +226,7 @@ def shapefile_sample(lat, lon, shapefile):
         test_x_round = round(test_x, 6)
         test_y_round = round(test_y, 6)
         if points_tested_since_last_success > 3000:
-            if num_points < 997: 
+            if num_points < 997:
                 log.Wrap('Sampling complete (3000 consecutive points tested since the last suitable one was found).')
                 break
             else:
@@ -261,7 +259,10 @@ def shapefile_sample(lat, lon, shapefile):
                 num_points -= 1
                 points_selected += 1
                 previously_selected_points.append(test_pt)
-                [wgs_lon, wgs_lat, z] = transform_back.TransformPoint(test_x, test_y)
+                if not horizontal_units.lower() in supported_units:
+                    [wgs_lon, wgs_lat, z] = transform_albers_to_wgs.TransformPoint(test_x, test_y)
+                else:
+                    [wgs_lon, wgs_lat, z] = rtran.TransformPoint(test_x, test_y)
                 wgs_lat = round(wgs_lat, 6)
                 wgs_lon = round(wgs_lon, 6)
                 coordinates_within_polygon.append([wgs_lat, wgs_lon])
@@ -289,6 +290,3 @@ if __name__ == '__main__':
 #        print(point)
     duration = time.clock() - start_time
     print('DevOnly: Processing took {} seconds'.format(duration))
-
-    
-

@@ -72,6 +72,7 @@ import matplotlib.dates as dates
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
 import pylab
+
 # Stop annoying urllib3 errors for EPQS tests
 # import logging
 # logging.getLogger("urllib3").setLevel(logging.ERROR)
@@ -866,8 +867,7 @@ class Main(object):
                 self.wimp_scraper.get_season(lat=float(self.site_lat),
                                              lon=float(self.site_long),
                                              month=int(self.dates.observation_month),
-                                             output_folder=None,
-                                             # output_folder=self.folderPath,
+                                             output_folder=self.folderPath,
                                              watershed_analysis=self.watershed_analysis)
                 del palmer_value, palmer_class, palmer_color
                 # Query all Elevations
@@ -881,8 +881,11 @@ class Main(object):
 
         # find the primary station after multiprocessing finishes
         need_primary = True
-        primary_station = self.getBest(need_primary=need_primary)
-        print(primary_station.location)
+        try:
+            primary_station = self.getBest(need_primary=need_primary)
+            print(primary_station.location)
+        except:
+            self.log.Wrap("No suitable primary station locations were found by the APT...")
         secondary_stations_sorted_list = []
         if primary_station is not None:
             # Note that the primary station has been found
@@ -1067,37 +1070,23 @@ class Main(object):
                 num_rows_antecedent = missing_before_antecedent-missing_after_antecedent
                 num_rows = num_rows_normal + num_rows_antecedent
                 if num_rows > 0:
-                    if n == 1: # n=1 should be the primary station in the station list
-                        num_stations_used += 1
-                        # BUILD STATIONS TABLE
-                        vals = []
-                        vals.append(station.name)
-                        vals.append(station.location)
-                        vals.append(station.elevation)
-                        vals.append("{0}*".format(station.distance))
-                        vals.append("{0}*".format(station.elevDiff))
-                        vals.append("{0}*".format(station.weightedDiff))
-                        vals.append(num_rows_normal)
-                        vals.append(num_rows_antecedent)
-                        station_table_values.append(vals)
-                    else:
-                        num_stations_used += 1
-                        # BUILD STATIONS TABLE
-                        vals = []
-                        vals.append(station.name)
-                        vals.append(station.location)
-                        vals.append(station.elevation)
-                        vals.append(station.distance)
-                        vals.append(station.elevDiff)
-                        vals.append(station.weightedDiff)
-                        vals.append(num_rows_normal)
-                        vals.append(num_rows_antecedent)
-                        station_table_values.append(vals)
+                    num_stations_used += 1
+                    # BUILD STATIONS TABLE
+                    vals = []
+                    vals.append(station.name)
+                    vals.append(station.location)
+                    vals.append(station.elevation)
+                    vals.append(station.distance)
+                    vals.append(station.elevDiff)
+                    vals.append(station.weightedDiff)
+                    vals.append(num_rows_normal)
+                    vals.append(num_rows_antecedent)
+                    station_table_values.append(vals)
                     # SAVE RESULTS TO CSV IN OUTPUT DIRECTORY
                     if self.save_folder is not None:
                         # Generate output
                         try:
-                            station_csv_name = '{}_{}.csv'.format(best_station.name,self.dates.observation_date).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
+                            station_csv_name = '{}_{}.csv'.format(station.name,self.dates.observation_date).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
                             station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
                             if os.path.isfile(station_csv_path) is False:
                                 self.log.Wrap('Saving station data to CSV in output folder...')
@@ -1502,6 +1491,7 @@ class Main(object):
 
         # Get WebWIMP Wet/Dry Season Determination
         if self.data_type == 'PRCP':
+            # Querying WebWIMP to collect Wet / Dry season info...'
             try:
                 # Querying WebWIMP to collect Wet / Dry season info...'
                 wet_dry_season_result = self.wimp_scraper.get_season(lat=float(self.site_lat),
@@ -1552,15 +1542,12 @@ class Main(object):
         # Make graph tic marks face outward
         rcParams['xtick.direction'] = 'out'
         rcParams['ytick.direction'] = 'out'
-
         # Construct Figure
         plt.ion() # MAKES PLOT.SHOW() NON-BLOCKING
         fig = plt.figure(figsize=(17, 11))
         fig.set_facecolor('0.77')
         fig.set_dpi(140)
-        # add a footer to the station table to describe the asterisk.
-        footer_text = '*This station is considered the primary station and these values are generated in relation to the location of interest.'
-        fig.text(0.51,0.31, footer_text, fontsize=10, color="black")
+        # fig.text(0.51,0.31, fontsize=10, color="black")
         if self.data_type == 'PRCP':
         #    if num_stations_used < 14:
             ax1 = plt.subplot2grid((9, 10), (0, 0), colspan=10, rowspan=6)
@@ -1906,38 +1893,16 @@ if __name__ == '__main__':
     #               None,
     #               SAVE_FOLDER,
     #               False]
-    INPUT_LIST = ['PRCP',
-                  '38.5',
-                  '-121.5',
-                  2018,
+    INPUT_LIST = [['PRCP',
+                  '36.98',
+                  '-110.084',
+                  2021,
+                  4,
                   10,
-                  15,
                   None,
                   None,
                   SAVE_FOLDER,
-                  False]
-    INPUT_LIST = [
-                  ['PRCP', '38.5', '-121.5', 1935, 5, 15, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1940, 2, 29, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1941, 2, 28, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1942, 12, 7, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1943, 6, 12, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1944, 7, 19, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1945, 8, 21, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1950, 3, 15, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1951, 6, 16, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1952, 7, 4, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1965, 1, 1, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1971, 5, 28, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1973, 7, 4, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1978, 11, 21, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1981, 12, 2, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1984, 4, 24, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1985, 9, 13, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1989, 5, 18, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 1998, 12, 1, None, None, SAVE_FOLDER, False],
-                  ['PRCP', '38.5', '-121.5', 2020, 6, 20, None, None, SAVE_FOLDER, False],
-                  ]
+                  False]]
     for i in INPUT_LIST:
         INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None)
     input('Stall for debugging.  Press enter or click X to close')

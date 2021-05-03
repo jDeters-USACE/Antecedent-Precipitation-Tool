@@ -1,15 +1,15 @@
 #  This software was developed by United States Army Corps of Engineers (USACE)
 #  employees in the course of their official duties.  USACE used copyrighted,
-#  open source code to develop this software, as such this software 
+#  open source code to develop this software, as such this software
 #  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
 #  portions of the software developed by USACE employees in the course of their
 #  official duties are not subject to copyright protection and are in the public
 #  domain.
-#  
+#
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
-#  
+#  quality, reliability, or any other characteristic.
+#
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
 #  fitness for a particular purpose, and noninfringement.  In no event shall the
@@ -17,12 +17,12 @@
 #  liability, whether in an action of contract, tort or otherwise, arising from,
 #  out of or in connection with the software or the use or other dealings in the
 #  software.
-#  
+#
 #  Public domain portions of this software can be redistributed and/or modified
 #  freely, provided that any derivative works bear some notice that they are
 #  derived from it, and any modified versions bear some notice that they have
-#  been modified. 
-#  
+#  been modified.
+#
 #  Copyrighted portions of the software are annotated within the source code.
 #  Open Source Licenses, included in the source code, apply to the applicable
 #  copyrighted portions.  Copyrighted portions of the software are not in the
@@ -171,7 +171,7 @@ def parse_results(results_list):
     parse_result.append(sampling_points_table_colors)
     return parse_result
 
-        
+
 
 def create_summary(site_lat, site_long, observation_date, geographic_scope, huc, huc_size, results_list, watershed_summary_path):
     """Creates Summary of results and prints to pdf"""
@@ -181,7 +181,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
 
     # Parse results list using function
     parsed_results = parse_results(results_list)
-    
+
     # Unpack function results
     avg_ap_score = parsed_results[0]
     preliminary_determination = parsed_results[1]
@@ -191,16 +191,33 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     pie_colors = parsed_results[5]
     sampling_points_table_values = parsed_results[6]
     sampling_points_table_colors = parsed_results[7]
-    
+
     # Construct Figure
     #plt.ion() # MAKES PLOT.SHOW() NON-BLOCKING
     fig = plt.figure(figsize=(13.5, 8.5))
     fig.set_facecolor('0.90')
+
+    # Add Logo
+    fig.set_dpi(135)
+    import os
+    MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
+    ROOT = os.path.split(MODULE_PATH)[0]
+    images_folder = os.path.join(ROOT, 'images')
+    logoFile = os.path.join(images_folder, 'Traverse_80%_1920.png')
+    logo = plt.imread(logoFile)
+    img = fig.figimage(X=logo, xo=0, yo=0)
+    img.set_zorder(0)
+
     ax1 = plt.subplot2grid((20, 9), (3, 1), colspan=4, rowspan=2)
     ax2 = plt.subplot2grid((20, 9), (6, 1), colspan=4, rowspan=2)
     ax3 = plt.subplot2grid((20, 9), (9, 1), colspan=4, rowspan=2)
     ax4 = plt.subplot2grid((20, 9), (12, 0), colspan=9, rowspan=9)
     ax5 = plt.subplot2grid((20, 18), (3, 11), colspan=4, rowspan=7)
+    ax1.set_zorder(1)
+    ax2.set_zorder(1)
+    ax3.set_zorder(1)
+    ax4.set_zorder(1)
+    ax5.set_zorder(1)
 
     #pie_colors = [light_red, light_green, light_blue]
     patchyes, texts, autotexts = ax5.pie(pie_sizes,
@@ -212,20 +229,12 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     for autotext in autotexts:
         autotext.set_color('white')
         autotext.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
-    
+
     for text in texts:
         text.set_color('white')
         text.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
 
-    # Add Logo
-    fig.set_dpi(135)
-    import os
-    MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
-    ROOT = os.path.split(MODULE_PATH)[0]
-    images_folder = os.path.join(ROOT, 'images')
-    logoFile = os.path.join(images_folder, 'Traverse_80%_1920.png')
-    logo = plt.imread(logoFile)
-    img = fig.figimage(X=logo, xo=0, yo=0)
+
 
 
 #    for text in texts:
@@ -362,7 +371,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     today_str = today_datetime.strftime('%Y-%m-%d')
     # Add Generated on today's date text
     #date_generated_text = ax1.text(0.027, 0.153, "Generated on {}".format(today_str), size=10, color='white')
-    date_generated_text = ax1.text(0.025, 0.153, "Generated on {}".format(today_str), size=10, color='white')
+    date_generated_text = fig.text(0.45, 0.93, "Generated on {}".format(today_str), size=10, color='white')
     date_generated_text.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
 
     # Remove space between subplots
@@ -381,7 +390,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
         # Save PDF
         print('Saving Watershed Summary figure...')
         fig.savefig(watershed_summary_path, facecolor='0.90')
-    
+
         # Closing figure in memory safe way
         print('Closing figure...')
         pylab.close(fig)
@@ -529,7 +538,7 @@ if __name__ == '__main__':
 #                   huc_size=1266.29,
 #                   results_list=RESULTS_LIST,
 #                   watershed_summary_path=WATERSHED_SUMMARY_PATH)
-    
+
     if WATERSHED_SUMMARY_PATH:
         import subprocess
         subprocess.Popen(WATERSHED_SUMMARY_PATH, shell=True)

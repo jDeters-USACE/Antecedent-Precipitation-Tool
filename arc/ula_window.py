@@ -165,45 +165,45 @@ class Main(object):
     def click_accept_button(self):
         self.master.destroy() # Close ULA window
         self.write_ula_accepted_file()
-        print('Checking for a newer version of the APT...')
-        get_all.main()
-        print('Checking for all required images...')
-        get_all.ensure_images()
-        print('Checking for Watershed Boundary Dataset - HUC2.shp...')
-        get_all.ensure_wbd_folder()
-        print('Checking for U.S. Boundary dataset...')
-        get_all.ensure_us_shp_folder()
-        print('Checking for NOAA Climate Divisions dataset...')
-        get_all.ensure_climdiv_folder()
-        print('Checking for latest nationwide cache of the Web-based Watershed Interactive Modeling Program (WebWIMP) results...')
-        get_all.ensure_WIMP()
-        print('Checking for all additional binaries required for exectuion...')
-        get_all.ensure_binaries()
-        print("All checks completed successfully.")
-        print("")
-        print('Launching APT...')
-        module_folder = os.path.dirname(os.path.realpath(__file__))
-        root_folder = os.path.split(module_folder)[0]
-        main_exe_path = '"{}\\main_ex.exe"'.format(root_folder)
-        test = subprocess.Popen(main_exe_path, shell=True)
-        time.sleep(2)
-        x = test.poll()
-        if x == 4294967295:
-            print('The APT is malfunctioning, likely due to a failed update.')
-            print('  Attempting to repair the directory...')
-            get_all.attempt_repair()
-            print('Repair package installed successfully.  Attempting to run main EXE again...')
-            test = subprocess.Popen(main_exe_path, shell=True)
-            time.sleep(2)
-            x = test.poll()
-            if x == 4294967295:
-                print('Repair was unsuccessful.  Please email APT-Report-Issue@usace.army.mil')
-                print('  to apprise them of the current situation.  If you try the tool again')
-                print('  later, updates will likely have been made to correct the issue.')
-                time.sleep(1)
-                print('Closign in 5 seconds...')
-                time.sleep(5)
-        sys.exit()
+        # print('Checking for a newer version of the APT...')
+        # get_all.main()
+        # print('Checking for all required images...')
+        # get_all.ensure_images()
+        # print('Checking for Watershed Boundary Dataset - HUC2.shp...')
+        # get_all.ensure_wbd_folder()
+        # print('Checking for U.S. Boundary dataset...')
+        # get_all.ensure_us_shp_folder()
+        # print('Checking for NOAA Climate Divisions dataset...')
+        # get_all.ensure_climdiv_folder()
+        # print('Checking for latest nationwide cache of the Web-based Watershed Interactive Modeling Program (WebWIMP) results...')
+        # get_all.ensure_WIMP()
+        # print('Checking for all additional binaries required for exectuion...')
+        # get_all.ensure_binaries()
+        # print("All checks completed successfully.")
+        # print("")
+        # print('Launching APT...')
+        # module_folder = os.path.dirname(os.path.realpath(__file__))
+        # root_folder = os.path.split(module_folder)[0]
+        # main_exe_path = '"{}\\main_ex.exe"'.format(root_folder)
+        # test = subprocess.Popen(main_exe_path, shell=True)
+        # time.sleep(2)
+        # x = test.poll()
+        # if x == 4294967295:
+        #     print('The APT is malfunctioning, likely due to a failed update.')
+        #     print('  Attempting to repair the directory...')
+        #     get_all.attempt_repair()
+        #     print('Repair package installed successfully.  Attempting to run main EXE again...')
+        #     test = subprocess.Popen(main_exe_path, shell=True)
+        #     time.sleep(2)
+        #     x = test.poll()
+        #     if x == 4294967295:
+        #         print('Repair was unsuccessful.  Please email APT-Report-Issue@usace.army.mil')
+        #         print('  to apprise them of the current situation.  If you try the tool again')
+        #         print('  later, updates will likely have been made to correct the issue.')
+        #         time.sleep(1)
+        #         print('Closign in 5 seconds...')
+        #         time.sleep(5)
+        # sys.exit()
 
     def click_cancel_button(self):
         self.master.destroy() # Close ULA window
@@ -233,6 +233,7 @@ class Main(object):
 
     def run(self):
         # Find "ula_accepted.txt"
+        count = 0
         module_path = os.path.dirname(os.path.realpath(__file__))
         root_folder = os.path.split(module_path)[0]
         ula_accepted_file = os.path.join(root_folder, 'ula_accepted')
@@ -241,6 +242,7 @@ class Main(object):
             self.click_accept_button()
         else:
             self.master.mainloop()
+
 
 if __name__ == '__main__':
     APP = Main()

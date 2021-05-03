@@ -731,8 +731,15 @@ class Main(object):
                 elif current_style == 'Switch to Unique Dates': #Means it is currently on CSV
                     self.get_inputs_csv()
             except Exception:
-                self.L.Wrap(traceback.format_exc())
+                print('The APT cannot complete this analysis.\n')
+                print('The following error occurred. Please close the APT and reboot.\n')
+                # self.L.Wrap(traceback.format_exc())
                 raise
+
+                # python = sys.executable
+                # os.execl(python, python, * sys.argv)
+                # self.master.mainloop()
+
     # End of calculate_and_graph method
 
 
@@ -1184,9 +1191,9 @@ class Main(object):
             forecast_enabled = True
         # Import anteProcess
         try:
-            from . import anteProcess
-        except Exception:
             import anteProcess
+        except Exception:
+            from . import anteProcess
         # Set data_variable specific variables
         if radio == 'Rain':
             if self.rain_instance is None:
