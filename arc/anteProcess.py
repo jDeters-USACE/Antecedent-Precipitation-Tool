@@ -353,6 +353,7 @@ def calc_normal_values(dates, values):
 class Main(object):
     def __init__(self, yMax=None):
         self.yMax = yMax
+
         self.searchDistance = 30 # Miles
         self.allStations = []
         self.recentStations = []
@@ -360,6 +361,7 @@ class Main(object):
         self.oldLatLong = None
         self.PDFs = []
         self.pdsidv_file = None
+        self.cdf_instance = None
         # Create PrintLog object
         self.log = JLog.PrintLog()
         self.log.Wrap('Initializing anteProcess Class...')
@@ -377,7 +379,7 @@ class Main(object):
         self.log.Wrap('Setting yMax to ' + str(yMax))
         self.yMax = yMax
 
-    def setInputs(self, inputList, watershed_analysis, all_sampling_coordinates):
+    def setInputs(self, inputList, watershed_analysis, all_sampling_coordinates, grid):
         # Set Inputs
         self.data_type = inputList[0]
         self.site_lat = inputList[1]
@@ -391,6 +393,7 @@ class Main(object):
         self.forecast_setting = inputList[9]
         self.watershed_analysis = watershed_analysis
         self.all_sampling_coordinates = all_sampling_coordinates
+        self.grid = grid # True/False this analysis will be using gridded rainfall
 
         if not self.allStations:
             # Check for previously Cached Station Data from same day
@@ -579,28 +582,29 @@ class Main(object):
         self.site_loc = (self.site_lat, self.site_long)
 
 # COMMANDS
-        # Get Stations
-        if self.recentStations == []:
-            self.getStations()
-        else:
-            for station in self.recentStations:
-                if station.data is None:
-                    station.run()
-                station.updateValues(self.site_loc,
-                                     self.obs_elevation,
-                                     self.dates.normal_period_data_start_date,
-                                     self.dates.actual_data_end_date,
-                                     self.dates.antecedent_period_start_date)
-                self.stations.append(station)
-            if self.watershed_analysis:
-                # Sort stations by weighted difference of current sampling point (Recalculated immediately above)
-                sorted_stations = []
-                for station in self.stations:
-                    sorted_stations.append([station.weightedDiff, station])
-                sorted_stations.sort(key=lambda x: x[0], reverse=False)
-                self.stations = []
-                for station in sorted_stations:
-                    self.stations.append(station[1])
+        if self.grid == False:
+            # Get Stations
+            if self.recentStations == []:
+                self.getStations()
+            else:
+                for station in self.recentStations:
+                    if station.data is None:
+                        station.run()
+                    station.updateValues(self.site_loc,
+                                         self.obs_elevation,
+                                         self.dates.normal_period_data_start_date,
+                                         self.dates.actual_data_end_date,
+                                         self.dates.antecedent_period_start_date)
+                    self.stations.append(station)
+                if self.watershed_analysis:
+                    # Sort stations by weighted difference of current sampling point (Recalculated immediately above)
+                    sorted_stations = []
+                    for station in self.stations:
+                        sorted_stations.append([station.weightedDiff, station])
+                    sorted_stations.sort(key=lambda x: x[0], reverse=False)
+                    self.stations = []
+                    for station in sorted_stations:
+                        self.stations.append(station[1])
 
         # Create Final DF and Graph
         return self.createFinalDF()
@@ -1019,193 +1023,249 @@ class Main(object):
         station_table_values = [] # added by JLG
 
         # CREATE EMPTY DATAFRAME (self.finalDF)
-        self.log.Wrap("")
-        self.log.Wrap('Creating an empty dataframe from {} to {} to populate with weather station data...'.format(self.dates.normal_period_data_start_date, self.dates.actual_data_end_date))
-        index = pandas.date_range(start=self.dates.normal_period_data_start_date,
-                                  end=self.dates.actual_data_end_date,
-                                  freq='D')
-        self.finalDF = pandas.Series(index=index,
-                                     dtype="object",
-                                     name='value')
+        if self.grid is False:
+            self.log.Wrap("")
+            self.log.Wrap('Creating an empty dataframe from {} to {} to populate with weather station data...'.format(self.dates.normal_period_data_start_date, self.dates.actual_data_end_date))
+            index = pandas.date_range(start=self.dates.normal_period_data_start_date,
+                                      end=self.dates.actual_data_end_date,
+                                      freq='D')
+            self.finalDF = pandas.Series(index=index,
+                                         dtype="object",
+                                         name='value')
 
-        # FILL self.finalDF
-        # Fill in NaN using top station
-        n = 0
-        num_stations_used = 0
-        if float(self.site_lat) < 50:
-            maxSearchDistance = 60      # Maximum distance between observation point and station location
-        else: # In AK, where stations are very rare
-            maxSearchDistance = 300
-        maxNumberOfStations = 15    # Maximum number of stations to use to complete record
-        while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
-            for station in self.stations:
-                print(station)
-                n += 1
-                if n == 1:
-                    self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
-                if self.searchDistance > 60:
-                    need_primary = False
-                # best_station = self.getBest(need_primary=need_primary)
-                # if best_station is not None:
-                    # Note that the primary station has been found
-                    # if need_primary is True:
-                    #     need_primary = False
-                    #     primary_station = best_station # added by JLG
-                        # recalcuate and set source
-                    # Get baseline null value count
+            # FILL self.finalDF
+            # Fill in NaN using top station
+            n = 0
+            num_stations_used = 0
+            if float(self.site_lat) < 50:
+                maxSearchDistance = 60      # Maximum distance between observation point and station location
+            else: # In AK, where stations are very rare
+                maxSearchDistance = 300
+            maxNumberOfStations = 15    # Maximum number of stations to use to complete record
+            while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
+                for station in self.stations:
+                    if num_stations_used < maxNumberOfStations:
+                        print(station)
+                        n += 1
+                        if n == 1:
+                            self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
+                        if self.searchDistance > 60:
+                            need_primary = False
+                        # best_station = self.getBest(need_primary=need_primary)
+                        # if best_station is not None:
+                            # Note that the primary station has been found
+                            # if need_primary is True:
+                            #     need_primary = False
+                            #     primary_station = best_station # added by JLG
+                                # recalcuate and set source
+                            # Get baseline null value count
+                        missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
+                        missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
+                        values = station.Values
+                        self.log.Wrap('Attempting to replace null values with values from {}...'.format(station.name))
+                        # Fill
+                        try:
+                            self.finalDF.fillna(values, inplace=True)
+                        except ValueError:
+                            self.log.Wrap('ERROR: No values found for {}. Station will be skipped.'.format(station.name))
+                        missingAfter = self.finalDF.isnull().sum().sum()
+                        self.log.Wrap(str(missingAfter) + ' null values remaining.')
+                        missing_after_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
+                        missing_after_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
+                        num_rows_normal = missing_before_normal-missing_after_normal
+                        num_rows_antecedent = missing_before_antecedent-missing_after_antecedent
+                        num_rows = num_rows_normal + num_rows_antecedent
+                        if num_rows > 0:
+                            num_stations_used += 1
+                            print("Stations Used = {}".format(num_stations_used))
+                            # BUILD STATIONS TABLE
+                            vals = []
+                            vals.append(station.name)
+                            vals.append(station.location)
+                            vals.append(station.elevation)
+                            vals.append(station.distance)
+                            vals.append(station.elevDiff)
+                            vals.append(station.weightedDiff)
+                            vals.append(num_rows_normal)
+                            vals.append(num_rows_antecedent)
+                            station_table_values.append(vals)
+                            # SAVE RESULTS TO CSV IN OUTPUT DIRECTORY
+                            if self.save_folder is not None:
+                                # Generate output
+                                try:
+                                    station_csv_name = '{}_{}.csv'.format(station.name,self.dates.observation_date).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
+                                    station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
+                                    if os.path.isfile(station_csv_path) is False:
+                                        self.log.Wrap('Saving station data to CSV in output folder...')
+                                        station.Values.to_csv(station_csv_path)
+                                except Exception:
+                                    pass # Will add an announcement that station data save failed later
+                    else:
+                        pass
+                if self.finalDF.isnull().sum().sum() > 0:
+                    self.log.Wrap("")
+                    self.log.Wrap("No suitable station available to replace null values.")
+                    if float(self.site_lat) < 50:
+                        self.searchDistance += 10 # Search distance increase interval
+                    else:
+                        self.searchDistance += 30 # In alaska it will probably go even higher.
+                    if self.finalDF.isnull().sum().sum() > 5:
+                        if self.searchDistance <= maxSearchDistance:
+                            # Clearing previous table data
+                            station_table_values = []
+                            # Clearing previous dataFrame in case a better fit is found.
+                            self.log.Wrap('Creating an empty dataset to populate with weather data...')
+                            self.log.Wrap("")
+                            index = pandas.date_range(start=self.dates.normal_period_data_start_date,
+                                                      end=self.dates.actual_data_end_date,
+                                                      freq='D')
+                            self.finalDF = pandas.Series(index=index,
+                                                         dtype="object",
+                                                         name='value')
+                            self.log.Wrap("Widening search...")
+                            num_stations_used = 0
+                            self.getStations()
+            self.searchDistance = 30 # Resetting this so future runs of the tool do not skip the above step.
+            # Fill NaN using linear interpolation
+            if self.finalDF.isnull().sum().sum() > 0:
+                #df.update(secondDF)
+                self.log.Wrap("")
+                self.log.Wrap('Attempting linear interpolation to fill null values...')
                 missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
                 missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-                values = station.Values
-                self.log.Wrap('Attempting to replace null values with values from {}...'.format(station.name))
-                # Fill
+                interp = self.finalDF.astype(float)
                 try:
-                    self.finalDF.fillna(values, inplace=True)
-                except ValueError:
-                    self.log.Wrap('ERROR: No values found for {}. Station will be skipped.'.format(station.name))
-                missingAfter = self.finalDF.isnull().sum().sum()
-                self.log.Wrap(str(missingAfter) + ' null values remaining.')
+                    interp.interpolate(method="time", inplace=True)
+                except Exception:
+                    interp.interpolate(inplace=True)
+                self.finalDF.fillna(interp, inplace=True)
+                self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + " null values remaining.")
                 missing_after_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
                 missing_after_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-                num_rows_normal = missing_before_normal-missing_after_normal
-                num_rows_antecedent = missing_before_antecedent-missing_after_antecedent
+                num_rows_normal = missing_before_normal - missing_after_normal
+                num_rows_antecedent = missing_before_antecedent - missing_after_antecedent
                 num_rows = num_rows_normal + num_rows_antecedent
                 if num_rows > 0:
                     num_stations_used += 1
                     # BUILD STATIONS TABLE
                     vals = []
-                    vals.append(station.name)
-                    vals.append(station.location)
-                    vals.append(station.elevation)
-                    vals.append(station.distance)
-                    vals.append(station.elevDiff)
-                    vals.append(station.weightedDiff)
+                    vals.append("Linear Interpolation")
+                    vals.append("N/A")
+                    vals.append("N/A")
+                    vals.append("N/A")
+                    vals.append("N/A")
+                    vals.append("N/A")
                     vals.append(num_rows_normal)
                     vals.append(num_rows_antecedent)
                     station_table_values.append(vals)
-                    # SAVE RESULTS TO CSV IN OUTPUT DIRECTORY
-                    if self.save_folder is not None:
-                        # Generate output
-                        try:
-                            station_csv_name = '{}_{}.csv'.format(station.name,self.dates.observation_date).replace('/','_') # Slashes keep getting added to file names somehow, causing failures here
-                            station_csv_path = os.path.join(self.stationFolderPath, station_csv_name)
-                            if os.path.isfile(station_csv_path) is False:
-                                self.log.Wrap('Saving station data to CSV in output folder...')
-                                station.Values.to_csv(station_csv_path)
-                        except Exception:
-                            pass # Will add an announcement that station data save failed later
-            if self.finalDF.isnull().sum().sum() > 0:
-                self.log.Wrap("")
-                self.log.Wrap("No suitable station available to replace null values.")
-                if float(self.site_lat) < 50:
-                    self.searchDistance += 10 # Search distance increase interval
-                else:
-                    self.searchDistance += 30 # In alaska it will probably go even higher.
-                if self.finalDF.isnull().sum().sum() > 5:
-                    if self.searchDistance <= maxSearchDistance:
-                        # Clearing previous table data
-                        station_table_values = []
-                        # Clearing previous dataFrame in case a better fit is found.
-                        self.log.Wrap('Creating an empty dataset to populate with weather data...')
-                        self.log.Wrap("")
-                        index = pandas.date_range(start=self.dates.normal_period_data_start_date,
-                                                  end=self.dates.actual_data_end_date,
-                                                  freq='D')
-                        self.finalDF = pandas.Series(index=index,
-                                                     dtype="object",
-                                                     name='value')
-                        self.log.Wrap("Widening search...")
-                        num_stations_used = 0
-                        self.getStations()
-        self.searchDistance = 30 # Resetting this so future runs of the tool do not skip the above step.
-        # Fill NaN using linear interpolation
-        if self.finalDF.isnull().sum().sum() > 0:
-            #df.update(secondDF)
-            self.log.Wrap("")
-            self.log.Wrap('Attempting linear interpolation to fill null values...')
-            missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
-            missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-            interp = self.finalDF.astype(float)
-            try:
-                interp.interpolate(method="time", inplace=True)
-            except Exception:
-                interp.interpolate(inplace=True)
-            self.finalDF.fillna(interp, inplace=True)
-            self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + " null values remaining.")
-            missing_after_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
-            missing_after_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-            num_rows_normal = missing_before_normal - missing_after_normal
-            num_rows_antecedent = missing_before_antecedent - missing_after_antecedent
-            num_rows = num_rows_normal + num_rows_antecedent
-            if num_rows > 0:
-                num_stations_used += 1
-                # BUILD STATIONS TABLE
-                vals = []
-                vals.append("Linear Interpolation")
-                vals.append("N/A")
-                vals.append("N/A")
-                vals.append("N/A")
-                vals.append("N/A")
-                vals.append("N/A")
-                vals.append(num_rows_normal)
-                vals.append(num_rows_antecedent)
-                station_table_values.append(vals)
 
-        if self.finalDF.isnull().sum().sum() < 1:
-            self.log.Wrap('No null values within self.finalDF')
+            if self.finalDF.isnull().sum().sum() < 1:
+                self.log.Wrap('No null values within self.finalDF')
 
-        else:
-            if self.data_type is not 'PRCP':
-                self.log.Wrap('Since this is not for PRCP... filling null values with "0" to allow graph output...')
-                self.finalDF.fillna(0, inplace=True)
-                if self.finalDF.isnull().sum().sum() < 1:
-                    self.log.Wrap('No null values within self.finalDF')
-        self.log.print_separator_line()
-        self.log.Wrap('')
+            else:
+                if self.data_type is not 'PRCP':
+                    self.log.Wrap('Since this is not for PRCP... filling null values with "0" to allow graph output...')
+                    self.finalDF.fillna(0, inplace=True)
+                    if self.finalDF.isnull().sum().sum() < 1:
+                        self.log.Wrap('No null values within self.finalDF')
+            self.log.print_separator_line()
+            self.log.Wrap('')
 
-        # SAVE finalDF TO CSV IN OUTPUT DIRECTORY
-        if self.save_folder is not None:
-            # Ensure output folder exists
-            try:
-                os.makedirs(self.stationFolderPath)
-            except Exception:
-                pass
-            # Generate output
-            merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_{0}.csv".format(self.dates.observation_date))
-            try:
-                if os.path.isfile(merged_stations_output_path) is False:
-                    self.log.Wrap('Saving "merged_stations_{0}.csv" data to output folder...'.format(self.dates.observation_date))
-                    self.finalDF.to_csv(merged_stations_output_path)
-            except Exception:
-                pass
-        # Converting to milimeters
-        if self.data_type == 'PRCP':
-#            self.log.Wrap('Converting PRCP values to milimeters...')
-            if self.finalDF is not None:
-                self.finalDF = self.finalDF/10.0
-#                self.log.Wrap('self.finalDF conversion complete.')
-#            self.log.print_separator_line()
-#            self.log.Wrap('')
-        # Converting to inches
-        units = 'in'
-        units_long = 'Inches'
-        if self.data_type == 'PRCP':
-            self.log.Wrap('Converting PRCP values to inches...')
-            if self.finalDF is not None:
-                self.finalDF = self.finalDF * 0.03937008
-                self.log.Wrap('self.finalDF conversion complete.')
- #           self.log.print_separator_line()
- #           self.log.Wrap('')
-        # Save converted finalDF to CSV in output directory
-        if self.save_folder is not None:
-            # Generate output
-            converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{0}_{1}.csv".format(units,self.dates.observation_date))
-            if os.path.isfile(converted_stations_output_path) is False:
-                self.log.Wrap('Saving "merged_stations_converted_to_{0}_{1}.csv" data to output folder...'.format(units,self.dates.observation_date))
+            # SAVE finalDF TO CSV IN OUTPUT DIRECTORY
+            if self.save_folder is not None:
+                # Ensure output folder exists
                 try:
-                    self.finalDF.to_csv(converted_stations_output_path)
+                    os.makedirs(self.stationFolderPath)
                 except Exception:
                     pass
-        self.log.print_separator_line()
+                # Generate output
+                merged_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_{0}.csv".format(self.dates.observation_date))
+                try:
+                    if os.path.isfile(merged_stations_output_path) is False:
+                        self.log.Wrap('Saving "merged_stations_{0}.csv" data to output folder...'.format(self.dates.observation_date))
+                        self.finalDF.to_csv(merged_stations_output_path)
+                except Exception:
+                    pass
+            # Converting to milimeters
+            if self.data_type == 'PRCP':
+    #            self.log.Wrap('Converting PRCP values to milimeters...')
+                if self.finalDF is not None:
+                    self.finalDF = self.finalDF/10.0
+    #                self.log.Wrap('self.finalDF conversion complete.')
+    #            self.log.print_separator_line()
+    #            self.log.Wrap('')
+            # Converting to inches
+            units = 'in'
+            units_long = 'Inches'
+            if self.data_type == 'PRCP':
+                self.log.Wrap('Converting PRCP values to inches...')
+                if self.finalDF is not None:
+                    self.finalDF = self.finalDF * 0.03937008
+                    self.log.Wrap('self.finalDF conversion complete.')
+     #           self.log.print_separator_line()
+     #           self.log.Wrap('')
+            # Save converted finalDF to CSV in output directory
+            if self.save_folder is not None:
+                # Generate output
+                converted_stations_output_path = os.path.join(self.stationFolderPath, "merged_stations_converted_to_{0}_{1}.csv".format(units,self.dates.observation_date))
+                if os.path.isfile(converted_stations_output_path) is False:
+                    self.log.Wrap('Saving "merged_stations_converted_to_{0}_{1}.csv" data to output folder...'.format(units,self.dates.observation_date))
+                    try:
+                        self.finalDF.to_csv(converted_stations_output_path)
+                    except Exception:
+                        pass
+            self.log.print_separator_line()
+        else:
+            # Grid Section
+            if self.cdf_instance is None:
+                import net_cdf_parse_all
+                self.cdf_instance = net_cdf_parse_all.get_point_history(float(self.site_lat), float(self.site_long))
+                self.cdf_instance()
+                self.gridFolderPath = os.path.join(self.folderPath, "Grid Data")
+                if os.path.isdir(self.gridFolderPath) == True:
+                    pass
+                else:
+                    os.mkdir(self.gridFolderPath)
+                # Save entire TS to CSV in output directory
+                try:
+                    outputName = '({}, {}) Complete AlphaGrid PRCP.csv'.format(self.cdf_instance.closest_lat, self.cdf_instance.closest_lon)
+                    outputName = os.path.join(self.gridFolderPath, outputName)
+                    if os.path.isfile(outputName) is True:
+                        os.remove(outputName)
+                        time.sleep(1)
+                    self.log.Wrap('Saving Complete AlphaGrid PRCP data to CSV in output folder...')
+                    self.cdf_instance.entire_ts.to_csv(outputName)
+                except Exception as F:
+                    self.log.Wrap(str(F))
+            self.log.Wrap('Entire TimeSeries rows = {}'.format(self.cdf_instance.entire_ts.count()))
+            self.finalDF = self.cdf_instance.entire_ts[self.dates.normal_period_data_start_date:self.dates.actual_data_end_date]
+            self.log.Wrap('FinalDF rows = {}'.format(self.finalDF.count()))
+            currentValues = self.cdf_instance.entire_ts[self.dates.antecedent_period_start_date:self.dates.current_water_year_end_date]
+            self.log.Wrap('Current year rows = {}'.format(currentValues.count()))
+            # BUILD STATIONS TABLE
+            # x = 1
+            #row_labels3.append(row_options[0])
+            #vals = []
+            #vals.append('NOAA Gridded PRCP Alpha')
+            #vals.append('N/A')
+            #vals.append('N/A')
+            #vals.append('N/A')
+            #vals.append('N/A')
+            #vals.append('N/A')
+            #vals.append(self.finalDF.count())
+            #vals.append(currentValues.count())
+            #table_vals3.append(vals)
+##            # SAVE finalDF TO CSV IN OUTPUT DIRECTORY
+##            if self.saveFolder is not None:
+##                try:
+##                    outputName = '{}\\({}, {}) Trimmed AlphaGrid PRCP.csv'.format(self.stationFolderPath, self.cdf_instance.closest_lat, self.cdf_instance.closest_lon)
+##                    if os.path.isfile(outputName) is True:
+##                        os.remove(outputName)
+##                        time.sleep(1)
+##                    self.L.Wrap('Saving Trimmed AlphaGrid PRCP data to CSV in output folder...')
+##                    self.finalDF.to_csv(outputName)
+##                except Exception as F:
+##                    self.L.Wrap(F)
 
         # Calculate rolling 30 day sum for the DataFrame
         self.log.Wrap('calculating 30-day rolling totals...')
@@ -1226,6 +1286,9 @@ class Main(object):
         # Create a list of dates encompassing the 30-water-year Normal Period
         normal_period_dates = pandas.date_range(self.dates.normal_period_start_date, self.dates.normal_period_end_date)
         # Convert to 365x30 table
+        print(normal_period_dates) # JLG stopped here, just need more netcdfs
+        print(len(normal_period_dates))
+        print(len(statsRolling30day))
         allDays = value_list_to_water_year_table(dates=normal_period_dates, values=statsRolling30day)
 
 # Get current-year Normals (And those same normals replicated over the previous and following years for graphing)
@@ -1894,15 +1957,15 @@ if __name__ == '__main__':
     #               SAVE_FOLDER,
     #               False]
     INPUT_LIST = [['PRCP',
-                  '36.98',
-                  '-110.084',
-                  2021,
-                  4,
-                  10,
+                  '33.2098',
+                  '-87.5692',
+                  2019,
+                  9,
+                  2,
                   None,
                   None,
                   SAVE_FOLDER,
                   False]]
     for i in INPUT_LIST:
-        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None)
+        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, grid=True)
     input('Stall for debugging.  Press enter or click X to close')
