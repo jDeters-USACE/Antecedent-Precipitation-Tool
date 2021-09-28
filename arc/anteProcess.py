@@ -273,7 +273,9 @@ def value_list_to_water_year_table(dates, values):
     leap_day_rolling_totals = []
     log.Wrap('Collecting all rolling totals for each day of the year...')
     for row in dates:
-        if '-10-01' in str(row):
+        # JLG changed this for testing.
+        # if '-10-01' in str(row):
+        if '-01-01' in str(row):
             if newrow is not None:
                 # convert list to array
                 A = numpy.array(newrow)
@@ -356,7 +358,7 @@ class Main(object):
 
         self.searchDistance = 30 # Miles
         self.allStations = []
-        self.recentStations = []
+        # self.recentStations = []
         self.ghcn_station_list = None
         self.oldLatLong = None
         self.PDFs = []
@@ -441,11 +443,11 @@ class Main(object):
         else:
             if self.oldLatLong == (self.site_lat, self.site_long):
                 self.log.Wrap('Same location. Keeping recent stations list.')
-                try:
-                    self.obs_elevation == 0
-                except Exception:
-                    # Querying Elevation of Observation Point'
-                    self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
+                # try:
+                #     self.obs_elevation == 0
+                # except Exception:
+                #     # Querying Elevation of Observation Point'
+                #     self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
             else:
                 self.oldLatLong = (self.site_lat, self.site_long)
                 self.searchDistance = 30 # Miles
@@ -453,12 +455,12 @@ class Main(object):
                 if not self.watershed_analysis:
                     self.log.Wrap('New location, starting new recent stations list.')
                     self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
-                    self.recentStations = []
+                    # self.recentStations = []
                     self.wimp_scraper = web_wimp_scraper.WimpScraper()
                 else:
                     if self.old_all_sampling_coordinates is None: # First point of a watershed analysis
                         self.old_all_sampling_coordinates = self.all_sampling_coordinates
-                        self.recentStations = [] # Reset recent stations so it can do the wide sweep
+                        # self.recentStations = [] # Reset recent stations so it can do the wide sweep
                     else:
                         if self.old_all_sampling_coordinates == self.all_sampling_coordinates:
                             self.log.Wrap('Continuing Watershed Analysis - Keeping recent stations list.')
@@ -469,7 +471,7 @@ class Main(object):
                                 self.obs_elevation = round(getElev.main(self.site_lat, self.site_long, epqs_variant=self.epqs_variant), 3)
                         else:
                             self.log.Wrap('New Watershed Analysis - starting new recent stations list.')
-                            self.recentStations = []
+                            # self.recentStations = []
                             self.all_sampling_coordinate_elevations = None
                             self.old_all_sampling_coordinates = self.all_sampling_coordinates
 
@@ -584,18 +586,18 @@ class Main(object):
 # COMMANDS
         if self.grid == False:
             # Get Stations
-            if self.recentStations == []:
+            if self.stations == []:
                 self.getStations()
             else:
-                for station in self.recentStations:
-                    if station.data is None:
-                        station.run()
-                    station.updateValues(self.site_loc,
-                                         self.obs_elevation,
-                                         self.dates.normal_period_data_start_date,
-                                         self.dates.actual_data_end_date,
-                                         self.dates.antecedent_period_start_date)
-                    self.stations.append(station)
+                # for station in self.recentStations:
+                #     if station.data is None:
+                #         station.run()
+                #     station.updateValues(self.site_loc,
+                #                          self.obs_elevation,
+                #                          self.dates.normal_period_data_start_date,
+                #                          self.dates.actual_data_end_date,
+                #                          self.dates.antecedent_period_start_date)
+                #     self.stations.append(station)
                 if self.watershed_analysis:
                     # Sort stations by weighted difference of current sampling point (Recalculated immediately above)
                     sorted_stations = []
@@ -653,7 +655,7 @@ class Main(object):
         """Locates and enqueus all stations within the selected search distance"""
         # Reset Station Numbering (Affects print display only)
         station_number_for_print = 0
-        self.recentStations = []
+        # self.recentStations = []
         # Find min and max ranges (Speed up search, Especially for HUC8 Watershed)
         min_lat = None
         max_lat = None
@@ -738,7 +740,7 @@ class Main(object):
                                                  self.dates.actual_data_end_date,
                                                  self.dates.antecedent_period_start_date)
                             self.stations.append(already)
-                            self.recentStations.append(already)
+                            # self.recentStations.append(already)
                     if already is False:
                         station_number_for_print += 1
                         self.log.Wrap('Station {} - {}'.format(station_number_for_print, name))
@@ -791,7 +793,7 @@ class Main(object):
                     if result.data is None:
                         result.run()
                     self.stations.append(result)
-                    self.recentStations.append(result)
+                    # self.recentStations.append(result)
                     self.allStations.append(result)
                 count_copy -= 1
                 # Discern avg. pace and approximate time remaining
@@ -851,6 +853,27 @@ class Main(object):
         self.log.Write('')
     # End of finish_multiprocessing function
 
+    def sortStations(self, primary_station, stations):
+        # If stations are not the primary station, sort stations by weighted difference
+        sorted_stations = []
+        for station in self.stations:
+            # loop through non-primary-stations and recalculate distance, etc.
+            # based off of distance from primary station
+            if station.name != primary_station.name:
+                distance = great_circle(primary_station.location, station.location).miles
+                distance = round(distance, 3)
+                station.distance = distance
+                elevDiff = round((primary_station.elevation - station.elevation), 3)
+                elevDiff = abs(elevDiff)
+                station.elevDiff = elevDiff
+                weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
+                station.weightedDiff = weightedDiff
+                sorted_stations.append([station.weightedDiff, station])
+        sorted_stations.sort(key=lambda x: x[0], reverse=False)
+        # insert primary station at the top of the list
+        sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
+        return sorted_stations
+
     def getStations(self):
         # Start Multiprocessing
         tasks_queue, results_queue, minions = self.start_multiprocessing()
@@ -887,32 +910,31 @@ class Main(object):
         need_primary = True
         try:
             primary_station = self.getBest(need_primary=need_primary)
-            print(primary_station.location)
         except:
             self.log.Wrap("No suitable primary station locations were found by the APT...")
-        secondary_stations_sorted_list = []
         if primary_station is not None:
             # Note that the primary station has been found
             if need_primary is True:
                 need_primary = False
-        # If stations are not the primary station, sort stations by weighted difference
-        sorted_stations = []
-        for station in self.stations:
-            # loop through non-primary-stations and recalculate distance, etc.
-            # based off of distance from primary station
-            if station.name != primary_station.name:
-                distance = great_circle(primary_station.location, station.location).miles
-                distance = round(distance, 3)
-                station.distance = distance
-                elevDiff = round((primary_station.elevation - station.elevation), 3)
-                elevDiff = abs(elevDiff)
-                station.elevDiff = elevDiff
-                weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
-                station.weightedDiff = weightedDiff
-                sorted_stations.append([station.weightedDiff, station])
-        sorted_stations.sort(key=lambda x: x[0], reverse=False)
-        # insert primary station at the top of the list
-        sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
+        sorted_stations = self.sortStations(primary_station, self.stations)
+        # # If stations are not the primary station, sort stations by weighted difference
+        # sorted_stations = []
+        # for station in self.stations:
+        #     # loop through non-primary-stations and recalculate distance, etc.
+        #     # based off of distance from primary station
+        #     if station.name != primary_station.name:
+        #         distance = great_circle(primary_station.location, station.location).miles
+        #         distance = round(distance, 3)
+        #         station.distance = distance
+        #         elevDiff = round((primary_station.elevation - station.elevation), 3)
+        #         elevDiff = abs(elevDiff)
+        #         station.elevDiff = elevDiff
+        #         weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
+        #         station.weightedDiff = weightedDiff
+        #         sorted_stations.append([station.weightedDiff, station])
+        # sorted_stations.sort(key=lambda x: x[0], reverse=False)
+        # # insert primary station at the top of the list
+        # sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
         self.stations = []
         self.log.Wrap('Looking for stations missing data...')
         for sort_list in sorted_stations:
@@ -1042,10 +1064,10 @@ class Main(object):
             else: # In AK, where stations are very rare
                 maxSearchDistance = 300
             maxNumberOfStations = 15    # Maximum number of stations to use to complete record
-            while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
+            # while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
+            while self.finalDF.isnull().sum().sum() > 0:
                 for station in self.stations:
-                    if num_stations_used < maxNumberOfStations:
-                        print(station)
+                    if num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.grid==False:
                         n += 1
                         if n == 1:
                             self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
@@ -1077,7 +1099,6 @@ class Main(object):
                         num_rows = num_rows_normal + num_rows_antecedent
                         if num_rows > 0:
                             num_stations_used += 1
-                            print("Stations Used = {}".format(num_stations_used))
                             # BUILD STATIONS TABLE
                             vals = []
                             vals.append(station.name)
@@ -1101,7 +1122,7 @@ class Main(object):
                                 except Exception:
                                     pass # Will add an announcement that station data save failed later
                     else:
-                        pass
+                        self.log.Wrap('No suitable station available to replace null values.')
                 if self.finalDF.isnull().sum().sum() > 0:
                     self.log.Wrap("")
                     self.log.Wrap("No suitable station available to replace null values.")
@@ -1188,17 +1209,17 @@ class Main(object):
                     pass
             # Converting to milimeters
             if self.data_type == 'PRCP':
-    #            self.log.Wrap('Converting PRCP values to milimeters...')
+    # #            self.log.Wrap('Converting PRCP values to milimeters...')
                 if self.finalDF is not None:
                     self.finalDF = self.finalDF/10.0
-    #                self.log.Wrap('self.finalDF conversion complete.')
+                   # self.log.Wrap('self.finalDF conversion complete.')
     #            self.log.print_separator_line()
     #            self.log.Wrap('')
-            # Converting to inches
+            # Converting from millimeters to inches
             units = 'in'
             units_long = 'Inches'
             if self.data_type == 'PRCP':
-                self.log.Wrap('Converting PRCP values to inches...')
+                self.log.Wrap('Converting PRCP values from millimeters to inches...')
                 if self.finalDF is not None:
                     self.finalDF = self.finalDF * 0.03937008
                     self.log.Wrap('self.finalDF conversion complete.')
@@ -1215,11 +1236,12 @@ class Main(object):
                     except Exception:
                         pass
             self.log.print_separator_line()
-        else:
+        elif self.grid is True:
             # Grid Section
+            num_stations_used = 0
             if self.cdf_instance is None:
-                import net_cdf_parse_all
-                self.cdf_instance = net_cdf_parse_all.get_point_history(float(self.site_lat), float(self.site_long))
+                import netcdf_parse_all
+                self.cdf_instance = netcdf_parse_all.get_point_history(float(self.site_lat), float(self.site_long))
                 self.cdf_instance()
                 self.gridFolderPath = os.path.join(self.folderPath, "Grid Data")
                 if os.path.isdir(self.gridFolderPath) == True:
@@ -1242,6 +1264,14 @@ class Main(object):
             self.log.Wrap('FinalDF rows = {}'.format(self.finalDF.count()))
             currentValues = self.cdf_instance.entire_ts[self.dates.antecedent_period_start_date:self.dates.current_water_year_end_date]
             self.log.Wrap('Current year rows = {}'.format(currentValues.count()))
+            # convert the data into inches
+            units = 'in'
+            units_long = 'Inches'
+            if self.data_type == 'PRCP':
+                self.log.Wrap('Converting PRCP values to inches...')
+                if self.finalDF is not None:
+                    self.finalDF = self.finalDF * 0.03937008
+                    self.log.Wrap('self.finalDF conversion complete.')
             # BUILD STATIONS TABLE
             # x = 1
             #row_labels3.append(row_options[0])
@@ -1286,9 +1316,6 @@ class Main(object):
         # Create a list of dates encompassing the 30-water-year Normal Period
         normal_period_dates = pandas.date_range(self.dates.normal_period_start_date, self.dates.normal_period_end_date)
         # Convert to 365x30 table
-        print(normal_period_dates) # JLG stopped here, just need more netcdfs
-        print(len(normal_period_dates))
-        print(len(statsRolling30day))
         allDays = value_list_to_water_year_table(dates=normal_period_dates, values=statsRolling30day)
 
 # Get current-year Normals (And those same normals replicated over the previous and following years for graphing)
@@ -1631,7 +1658,7 @@ class Main(object):
                 images_folder = os.path.join(sys.prefix, 'images')
                 logo_file = os.path.join(images_folder, 'RD_1_0.png')
                 logo = plt.imread(logo_file)
-            img = fig.figimage(X=logo, xo=118, yo=20)
+            img = fig.figimage(X=logo, xo=118, yo=8)
 
         else:
             ax1 = plt.subplot2grid((9, 10), (0, 0), colspan=10, rowspan=7)
@@ -1726,8 +1753,12 @@ class Main(object):
         if self.data_type == 'PRCP':
 #            ax1.set_title("Antecedent Precipitation and 30-Year Normal Range from NOAA's Daily Global Historical Climatology Network",
 #                          fontsize=20)
-            ax1.set_title("Antecedent Precipitation vs Normal Range based on NOAA's Daily Global Historical Climatology Network",
-                          fontsize=20)
+            if self.grid is False:
+                ax1.set_title("Antecedent Precipitation vs Normal Range based on NOAA's Daily Global Historical Climatology Network",
+                              fontsize=20)
+            elif self.grid is True:
+                ax1.set_title("Antecedent Precipitation vs Normal Range based on NOAA's Gridded Daily Global Historical Climatology Network",
+                              fontsize=20)
 #            ax1.set_title('NOAA - National Climatic Data Center - Daily Global'
 #                          ' Historical Climatology Network - Rainfall Data',
 #                          fontsize=20)
@@ -1785,19 +1816,20 @@ class Main(object):
             the_table.set_fontsize(10)
 
             # Plot Stations Table
-            station_table_colors = [[light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey]]
-            for row in station_table_values[:]:
-                station_table_colors.append([white, white, white, white, white, white, white, white])
+            if self.grid is False:
+                station_table_colors = [[light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey]]
+                for row in station_table_values[:]:
+                    station_table_colors.append([white, white, white, white, white, white, white, white])
 
-            # combine the station table headers and values after sorting by distance from the location of interest
-            station_table_values = station_table_column_labels + station_table_values
+                # combine the station table headers and values after sorting by distance from the location of interest
+                station_table_values = station_table_column_labels + station_table_values
 
-            stations_table = ax4.table(cellText=station_table_values,
-                                       cellColours=station_table_colors,
-                                       colWidths=[0.25, 0.15, 0.095, 0.097, 0.087, 0.087, 0.104, 0.132],
-                                       loc='center')
-            stations_table.auto_set_font_size(False)
-            stations_table.set_fontsize(10)
+                stations_table = ax4.table(cellText=station_table_values,
+                                           cellColours=station_table_colors,
+                                           colWidths=[0.25, 0.15, 0.095, 0.097, 0.087, 0.087, 0.104, 0.132],
+                                           loc='center')
+                stations_table.auto_set_font_size(False)
+                stations_table.set_fontsize(10)
 
             # Determine bottom separation value by table rows
             if num_stations_used < 4:
@@ -1960,12 +1992,12 @@ if __name__ == '__main__':
                   '33.2098',
                   '-87.5692',
                   2019,
-                  9,
-                  2,
+                  1,
+                  15,
                   None,
                   None,
                   SAVE_FOLDER,
                   False]]
     for i in INPUT_LIST:
-        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, grid=True)
+        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, grid=False)
     input('Stall for debugging.  Press enter or click X to close')
