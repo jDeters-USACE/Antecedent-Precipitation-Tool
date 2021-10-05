@@ -853,27 +853,6 @@ class Main(object):
         self.log.Write('')
     # End of finish_multiprocessing function
 
-    def sortStations(self, primary_station, stations):
-        # If stations are not the primary station, sort stations by weighted difference
-        sorted_stations = []
-        for station in self.stations:
-            # loop through non-primary-stations and recalculate distance, etc.
-            # based off of distance from primary station
-            if station.name != primary_station.name:
-                distance = great_circle(primary_station.location, station.location).miles
-                distance = round(distance, 3)
-                station.distance = distance
-                elevDiff = round((primary_station.elevation - station.elevation), 3)
-                elevDiff = abs(elevDiff)
-                station.elevDiff = elevDiff
-                weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
-                station.weightedDiff = weightedDiff
-                sorted_stations.append([station.weightedDiff, station])
-        sorted_stations.sort(key=lambda x: x[0], reverse=False)
-        # insert primary station at the top of the list
-        sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
-        return sorted_stations
-
     def getStations(self):
         # Start Multiprocessing
         tasks_queue, results_queue, minions = self.start_multiprocessing()
@@ -906,48 +885,6 @@ class Main(object):
         # Maintain processing pool until all jobs are complete and collect results
         self.finish_multiprocessing(tasks_queue, results_queue, minions, enqueue_count)
 
-        # find the primary station after multiprocessing finishes
-        need_primary = True
-        try:
-            primary_station = self.getBest(need_primary=need_primary)
-        except:
-            self.log.Wrap("No suitable primary station locations were found by the APT...")
-        if primary_station is not None:
-            # Note that the primary station has been found
-            if need_primary is True:
-                need_primary = False
-        sorted_stations = self.sortStations(primary_station, self.stations)
-        # # If stations are not the primary station, sort stations by weighted difference
-        # sorted_stations = []
-        # for station in self.stations:
-        #     # loop through non-primary-stations and recalculate distance, etc.
-        #     # based off of distance from primary station
-        #     if station.name != primary_station.name:
-        #         distance = great_circle(primary_station.location, station.location).miles
-        #         distance = round(distance, 3)
-        #         station.distance = distance
-        #         elevDiff = round((primary_station.elevation - station.elevation), 3)
-        #         elevDiff = abs(elevDiff)
-        #         station.elevDiff = elevDiff
-        #         weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
-        #         station.weightedDiff = weightedDiff
-        #         sorted_stations.append([station.weightedDiff, station])
-        # sorted_stations.sort(key=lambda x: x[0], reverse=False)
-        # # insert primary station at the top of the list
-        # sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
-        self.stations = []
-        self.log.Wrap('Looking for stations missing data...')
-        for sort_list in sorted_stations:
-            station = sort_list[1]
-            if station.data is None:
-                self.log.Wrap('  Station download failed for {}'.format(station.name))
-                self.log.Wrap('    Retrying download...')
-                station.run()
-                if station.data is None:
-                    self.log.Wrap('      Download failed again. Ignoring station.')
-                else:
-                    self.log.Wrap('      Download successful!')
-            self.stations.append(station)
         # Pickle All Stations for re-use the same day
         if self.data_type == 'PRCP':
             self.log.Wrap('Attempting to pickle Station Records for future use within 12 hours...')
@@ -1027,6 +964,38 @@ class Main(object):
             self.stations.remove(best_station)
         return best_station
 
+    def sortStations(self, primary_station):
+        sorted_stations = []
+        for station in self.stations:
+            # loop through non-primary-stations and recalculate distance, etc.
+            # based off of distance from primary station
+            if station.name != primary_station.name:
+                distance = great_circle(primary_station.location, station.location).miles
+                distance = round(distance, 3)
+                station.distance = distance
+                elevDiff = round((primary_station.elevation - station.elevation), 3)
+                elevDiff = abs(elevDiff)
+                station.elevDiff = elevDiff
+                weightedDiff = round(distance*((elevDiff/1000)+0.45), 3)
+                station.weightedDiff = weightedDiff
+                sorted_stations.append([station.weightedDiff, station])
+        sorted_stations.sort(key=lambda x: x[0], reverse=False)
+        # insert primary station at the top of the list
+        sorted_stations.insert(0, [primary_station.weightedDiff, primary_station])
+        self.stations = []
+        self.log.Wrap('Looking for stations missing data...')
+        for sort_list in sorted_stations:
+            station = sort_list[1]
+            if station.data is None:
+                self.log.Wrap('  Station download failed for {}'.format(station.name))
+                self.log.Wrap('    Retrying download...')
+                station.run()
+                if station.data is None:
+                    self.log.Wrap('      Download failed again. Ignoring station.')
+                else:
+                    self.log.Wrap('      Download successful!')
+            self.stations.append(station)
+
     def createFinalDF(self):
         # Start to Build Stations Table (continues during iteration below)
         station_table_column_labels =[["Weather Station Name",
@@ -1046,6 +1015,10 @@ class Main(object):
 
         # CREATE EMPTY DATAFRAME (self.finalDF)
         if self.grid is False:
+            if float(self.site_lat) < 50:
+                maxSearchDistance = 60      # Maximum distance between observation point and station location
+            else: # In AK, where stations are very rare
+                maxSearchDistance = 300
             self.log.Wrap("")
             self.log.Wrap('Creating an empty dataframe from {} to {} to populate with weather station data...'.format(self.dates.normal_period_data_start_date, self.dates.actual_data_end_date))
             index = pandas.date_range(start=self.dates.normal_period_data_start_date,
@@ -1055,18 +1028,48 @@ class Main(object):
                                          dtype="object",
                                          name='value')
 
+            # find the primary station after to order the precip selection
+            need_primary = True
+            primary_station = None
+            while primary_station is None:
+                primary_station = self.getBest(need_primary=need_primary)
+                if primary_station is not None:
+                    # Note that the primary station has been found
+                    if need_primary is True:
+                        need_primary = False
+                else:
+                    self.log.Wrap("No suitable primary station locations were found by the APT...")
+                    self.log.Wrap("")
+                    if float(self.site_lat) < 50:
+                        self.searchDistance += 10 # Search distance increase interval
+                    else:
+                        self.searchDistance += 30 # In alaska it will probably go even higher.
+                    if self.searchDistance <= maxSearchDistance:
+                        # Clearing previous table data
+                        station_table_values = []
+                        # Clearing previous dataFrame in case a better fit is found.
+                        self.log.Wrap('Creating an empty dataset to populate with weather data...')
+                        self.log.Wrap("")
+                        index = pandas.date_range(start=self.dates.normal_period_data_start_date,
+                                                  end=self.dates.actual_data_end_date,
+                                                  freq='D')
+                        self.finalDF = pandas.Series(index=index,
+                                                     dtype="object",
+                                                     name='value')
+                        self.log.Wrap("Widening search...")
+                        num_stations_used = 0
+                        self.getStations()
+            self.sortStations(primary_station)
+
             # FILL self.finalDF
             # Fill in NaN using top station
             n = 0
-            num_stations_used = 0
-            if float(self.site_lat) < 50:
-                maxSearchDistance = 60      # Maximum distance between observation point and station location
-            else: # In AK, where stations are very rare
-                maxSearchDistance = 300
+            num_stations_used = 0 # start counting the number of stations used
             maxNumberOfStations = 15    # Maximum number of stations to use to complete record
-            # while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
-            while self.finalDF.isnull().sum().sum() > 0:
+            while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
+            # number_of_stations = len(self.stations)
                 for station in self.stations:
+                # if self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.grid==False:
                     if num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.grid==False:
                         n += 1
                         if n == 1:
@@ -1120,9 +1123,9 @@ class Main(object):
                                         self.log.Wrap('Saving station data to CSV in output folder...')
                                         station.Values.to_csv(station_csv_path)
                                 except Exception:
-                                    pass # Will add an announcement that station data save failed later
+                                    pass # Will add an announcement that station data save failed later)
                     else:
-                        self.log.Wrap('No suitable station available to replace null values.')
+                        pass
                 if self.finalDF.isnull().sum().sum() > 0:
                     self.log.Wrap("")
                     self.log.Wrap("No suitable station available to replace null values.")
@@ -1146,39 +1149,44 @@ class Main(object):
                             self.log.Wrap("Widening search...")
                             num_stations_used = 0
                             self.getStations()
+                            self.sortStations(primary_station)
+
+                # Fill NaN using linear interpolation
+                if self.finalDF.isnull().sum().sum() > 0:
+                    #df.update(secondDF)
+                    self.log.Wrap("")
+                    self.log.Wrap('Attempting linear interpolation to fill null values...')
+                    missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
+                    missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
+                    interp = self.finalDF.astype(float)
+                    try:
+                        interp.interpolate(method="time", inplace=True, limit=1)
+                    except Exception:
+                        interp.interpolate(inplace=True, limit=1)
+                    self.finalDF.fillna(interp, inplace=True)
+                    self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + " null values remaining.")
+                    if self.finalDF.isnull().sum().sum() > 0:
+                        self.log.Wrap("Unfortunately, data gaps still persist after interpolating. Therefore, the APT was unable to complete your analysis.")
+                    missing_after_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
+                    missing_after_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
+                    num_rows_normal = missing_before_normal - missing_after_normal
+                    num_rows_antecedent = missing_before_antecedent - missing_after_antecedent
+                    num_rows = num_rows_normal + num_rows_antecedent
+                    if num_rows > 0:
+                        num_stations_used += 1
+                        # BUILD STATIONS TABLE
+                        vals = []
+                        vals.append("Linear Interpolation")
+                        vals.append("N/A")
+                        vals.append("N/A")
+                        vals.append("N/A")
+                        vals.append("N/A")
+                        vals.append("N/A")
+                        vals.append(num_rows_normal)
+                        vals.append(num_rows_antecedent)
+                        station_table_values.append(vals)
+
             self.searchDistance = 30 # Resetting this so future runs of the tool do not skip the above step.
-            # Fill NaN using linear interpolation
-            if self.finalDF.isnull().sum().sum() > 0:
-                #df.update(secondDF)
-                self.log.Wrap("")
-                self.log.Wrap('Attempting linear interpolation to fill null values...')
-                missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
-                missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-                interp = self.finalDF.astype(float)
-                try:
-                    interp.interpolate(method="time", inplace=True)
-                except Exception:
-                    interp.interpolate(inplace=True)
-                self.finalDF.fillna(interp, inplace=True)
-                self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + " null values remaining.")
-                missing_after_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
-                missing_after_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
-                num_rows_normal = missing_before_normal - missing_after_normal
-                num_rows_antecedent = missing_before_antecedent - missing_after_antecedent
-                num_rows = num_rows_normal + num_rows_antecedent
-                if num_rows > 0:
-                    num_stations_used += 1
-                    # BUILD STATIONS TABLE
-                    vals = []
-                    vals.append("Linear Interpolation")
-                    vals.append("N/A")
-                    vals.append("N/A")
-                    vals.append("N/A")
-                    vals.append("N/A")
-                    vals.append("N/A")
-                    vals.append(num_rows_normal)
-                    vals.append(num_rows_antecedent)
-                    station_table_values.append(vals)
 
             if self.finalDF.isnull().sum().sum() < 1:
                 self.log.Wrap('No null values within self.finalDF')
@@ -1298,7 +1306,7 @@ class Main(object):
 ##                    self.L.Wrap(F)
 
         # Calculate rolling 30 day sum for the DataFrame
-        self.log.Wrap('calculating 30-day rolling totals...')
+        self.log.Wrap('Calculating 30-day rolling totals...')
         try:
             longRolling30day = self.finalDF.rolling(window=30, center=False).sum()
         except Exception:

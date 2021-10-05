@@ -1580,8 +1580,12 @@ class Main(object):
             self.L.Wrap('')
             self.L.Wrap('Ready for new input.')
 
+            # reset the input lists
+            self.input_list_list_prcp = []
+            self.input_list_list_snow = []
+            self.input_list_list_snwd = []
             # reset the GUI
-            #self.master.mainloop()
+            # self.master.mainloop()
     # End calculate_or_add_batch function
 
 
