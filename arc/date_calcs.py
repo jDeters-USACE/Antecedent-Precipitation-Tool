@@ -74,37 +74,37 @@ class Main(object):
         self.observation_day = self.observation_datetime.strftime('%d')
         self.observation_month = self.observation_datetime.strftime('%m')
         self.observation_year = int(self.observation_datetime.strftime('%Y'))
-        # Calculate Start and End dates for the water year in question
-        # temporary change made by JLG for testing the gridded dataset
-        self.current_water_year_start_date = str(self.observation_year) + '-01-01'
-        self.current_water_year_end_date = str(self.observation_year) + '-12-31'
-        self.prior_water_year_start_date = str(self.observation_year - 1) + '-01-01'
-        self.prior_water_year_end_date = str(self.observation_year - 1) + '-12-31'
-        self.following_water_year_start_date = str(self.observation_year + 1) + '-01-01'
-        self.following_water_year_end_date = str(self.observation_year + 1) + '-12-31'
-        self.normal_period_start_date = str(self.observation_year - 29)+'-01-01'
-        self.normal_period_data_start_date = str(self.observation_year - 30)+'-01-01'
-        self.normal_period_end_date = str(self.observation_year - 1) + '-12-31'
-        # if int(self.observation_month) > 9:
-        #     self.current_water_year_start_date = str(self.observation_year) + '-10-01'
-        #     self.current_water_year_end_date = str(self.observation_year + 1) + '-09-30'
-        #     self.prior_water_year_start_date = str(self.observation_year - 1) + '-10-01'
-        #     self.prior_water_year_end_date = str(self.observation_year) + '-09-30'
-        #     self.following_water_year_start_date = str(self.observation_year + 1) + '-10-01'
-        #     self.following_water_year_end_date = str(self.observation_year + 2) + '-09-30'
-        #     self.normal_period_start_date = str(self.observation_year - 31)+'-10-01'
-        #     self.normal_period_data_start_date = str(self.observation_year - 31)+'-09-01'
-        #     self.normal_period_end_date = str(self.observation_year) + '-09-30'
-        # else:
-        #     self.current_water_year_start_date = str(self.observation_year - 1)+'-10-01'
-        #     self.current_water_year_end_date = str(self.observation_year)+'-09-30'
-        #     self.prior_water_year_start_date = str(self.observation_year - 2)+'-10-01'
-        #     self.prior_water_year_end_date = str(self.observation_year - 1)+'-09-30'
-        #     self.following_water_year_start_date = str(self.observation_year)+'-10-01'
-        #     self.following_water_year_end_date = str(self.observation_year + 1)+'-09-30'
-        #     self.normal_period_start_date = str(self.observation_year-32)+'-10-01'
-        #     self.normal_period_data_start_date = str(self.observation_year-32)+'-09-01'
-        #     self.normal_period_end_date = str(self.observation_year-1) + '-09-30'
+        # # Calculate Start and End dates for the water year in question
+        # # temporary change made by JLG for testing the gridded dataset
+        # self.current_water_year_start_date = str(self.observation_year) + '-01-01'
+        # self.current_water_year_end_date = str(self.observation_year) + '-12-31'
+        # self.prior_water_year_start_date = str(self.observation_year - 1) + '-01-01'
+        # self.prior_water_year_end_date = str(self.observation_year - 1) + '-12-31'
+        # self.following_water_year_start_date = str(self.observation_year + 1) + '-01-01'
+        # self.following_water_year_end_date = str(self.observation_year + 1) + '-12-31'
+        # self.normal_period_start_date = str(self.observation_year - 29)+'-01-01'
+        # self.normal_period_data_start_date = str(self.observation_year - 30)+'-01-01'
+        # self.normal_period_end_date = str(self.observation_year - 1) + '-12-31'
+        if int(self.observation_month) > 9:
+            self.current_water_year_start_date = str(self.observation_year) + '-10-01'
+            self.current_water_year_end_date = str(self.observation_year + 1) + '-09-30'
+            self.prior_water_year_start_date = str(self.observation_year - 1) + '-10-01'
+            self.prior_water_year_end_date = str(self.observation_year) + '-09-30'
+            self.following_water_year_start_date = str(self.observation_year + 1) + '-10-01'
+            self.following_water_year_end_date = str(self.observation_year + 2) + '-09-30'
+            self.normal_period_start_date = str(self.observation_year - 31)+'-10-01'
+            self.normal_period_data_start_date = str(self.observation_year - 31)+'-09-01'
+            self.normal_period_end_date = str(self.observation_year) + '-09-30'
+        else:
+            self.current_water_year_start_date = str(self.observation_year - 1)+'-10-01'
+            self.current_water_year_end_date = str(self.observation_year)+'-09-30'
+            self.prior_water_year_start_date = str(self.observation_year - 2)+'-10-01'
+            self.prior_water_year_end_date = str(self.observation_year - 1)+'-09-30'
+            self.following_water_year_start_date = str(self.observation_year)+'-10-01'
+            self.following_water_year_end_date = str(self.observation_year + 1)+'-09-30'
+            self.normal_period_start_date = str(self.observation_year-32)+'-10-01'
+            self.normal_period_data_start_date = str(self.observation_year-32)+'-09-01'
+            self.normal_period_end_date = str(self.observation_year-1) + '-09-30'
         # Calculate antecedent period start (90 days prior to obs_date)
         antecedent_period_start_datetime = self.observation_datetime - datetime.timedelta(days=89)
         self.antecedent_period_start_date = antecedent_period_start_datetime.strftime('%Y-%m-%d')

@@ -184,10 +184,10 @@ class Main(object):
 
         #---GRIDDED PRECIPITATION---#
         self.grid = False
-        self.grid_selection = tkinter.ttk.Checkbutton(self.master, text='Use Gridded Precipitation?',
-                                                      offvalue=0, onvalue=1,
-                                                      command=self.set_grid_input)
-        self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
+        # self.grid_selection = tkinter.ttk.Checkbutton(self.master, text='Use Gridded Precipitation?',
+        #                                               offvalue=0, onvalue=1,
+        #                                               command=self.set_grid_input)
+        # self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
 
         #---HELP BUTTON---#
         self.help_button = tkinter.ttk.Button(self.master, text='Help / More Info', image=self.question_image, command=click_help_button)

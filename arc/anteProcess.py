@@ -273,9 +273,9 @@ def value_list_to_water_year_table(dates, values):
     leap_day_rolling_totals = []
     log.Wrap('Collecting all rolling totals for each day of the year...')
     for row in dates:
-        # JLG changed this for testing.
-        # if '-10-01' in str(row):
-        if '-01-01' in str(row):
+        # JLG changed this for testing the gridded dataset.
+        if '-10-01' in str(row):
+        # if '-01-01' in str(row):
             if newrow is not None:
                 # convert list to array
                 A = numpy.array(newrow)
