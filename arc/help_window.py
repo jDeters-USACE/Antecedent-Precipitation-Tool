@@ -229,7 +229,7 @@ class Main(object):
         # Create/Grid ITEMS for WATERSHED SCALE USAGE
         self.add_reference(frame='Methodology',
                            title='Technical and User Guide (Gutenson and Deters, 2021):',
-                           pdf_local_path=os.path.join(docs_folder, 'APT - Technical and User Guide.pdf'),
+                           pdf_local_path=os.path.join(docs_folder, 'Gutenson and Deters.pdf'),
                            pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/Gutenson and Deters.pdf",
                            youtube_url=None)
         self.add_reference(frame='Methodology',
