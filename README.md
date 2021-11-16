@@ -1,6 +1,6 @@
 # Antecedent Precipitation Tool (APT)
 ## Where can I get it?
-Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/latest)
+Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/erdc/Antecedent-Precipitation-Tool/releases/latest)
 
 ## What is it?
 

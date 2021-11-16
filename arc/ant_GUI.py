@@ -33,8 +33,9 @@
 ##            ant_GUI.py            ##
 ##  ------------------------------- ##
 ##     Written by: Jason Deters     ##
+##      Edited by: Joseph Gutenson  ##
 ##  ------------------------------- ##
-##    Last Edited on:  2020-05-27   ##
+##    Last Edited on:  2021-11-16   ##
 ##  ------------------------------- ##
 ######################################
 
@@ -181,6 +182,13 @@ class Main(object):
 
         self.background_label = tkinter.Label(self.master, image=self.waterfall)
         self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        #---GRIDDED PRECIPITATION---#
+        self.grid = False
+        # self.grid_selection = tkinter.ttk.Checkbutton(self.master, text='Use Gridded Precipitation?',
+        #                                               offvalue=0, onvalue=1,
+        #                                               command=self.set_grid_input)
+        # self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
 
         #---HELP BUTTON---#
         self.help_button = tkinter.ttk.Button(self.master, text='Help / More Info', image=self.question_image, command=click_help_button)
@@ -522,6 +530,12 @@ class Main(object):
             self.BUTTON_BROWSE_SHAPEFILE.grid_forget()
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
+
+    def set_grid_input(self):
+        if self.grid_selection.instate(['!selected']):
+            self.grid = False
+        elif self.grid_selection.instate(['selected']):
+            self.grid = True
 
     def send_log(self):
         """
@@ -1290,7 +1304,7 @@ class Main(object):
                 self.L.print_title("SINGLE POINT ANALYSIS")
                 run_list = input_list + [save_folder, forecast_enabled]
                 self.L.Wrap('Running: '+str(run_list))
-                result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(run_list, watershed_analysis=False, all_sampling_coordinates=None)
+                result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(run_list, watershed_analysis=False, all_sampling_coordinates=None, grid=self.grid)
                 if result_pdf is not None:
                     # Open folder containing outputs
                     version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
@@ -1409,7 +1423,7 @@ class Main(object):
                     self.L.Wrap('')
                     self.L.Wrap('Running: '+str(current_input_list))
                     self.L.Wrap('')
-                    result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=watershed_analysis, all_sampling_coordinates=sampling_points)
+                    result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=watershed_analysis, all_sampling_coordinates=sampling_points, grid=self.grid)
                     if run_y_max > highest_y_max:
                         highest_y_max = run_y_max
                     if result_pdf is not None:
@@ -1511,7 +1525,7 @@ class Main(object):
                             self.L.Wrap('')
                             self.L.Wrap('Re-running with fixed yMax value: '+str(current_input_list))
                             self.L.Wrap('')
-                            result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=False, all_sampling_coordinates=None)
+                            result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=False, all_sampling_coordinates=None, grid=self.grid)
                             pdf_list.append(result_pdf)
                             # CHECK TO SEE IF INCREMENTAL MERGING IS NECESSARY
                             pdf_count += 1
@@ -1566,6 +1580,13 @@ class Main(object):
                         Task="All tasks")
             self.L.Wrap('')
             self.L.Wrap('Ready for new input.')
+
+            # reset the input lists
+            self.input_list_list_prcp = []
+            self.input_list_list_snow = []
+            self.input_list_list_snwd = []
+            # reset the GUI
+            # self.master.mainloop()
     # End calculate_or_add_batch function
 
 

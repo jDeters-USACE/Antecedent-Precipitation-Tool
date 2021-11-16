@@ -1,15 +1,15 @@
 #  This software was developed by United States Army Corps of Engineers (USACE)
 #  employees in the course of their official duties.  USACE used copyrighted,
-#  open source code to develop this software, as such this software 
+#  open source code to develop this software, as such this software
 #  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
 #  portions of the software developed by USACE employees in the course of their
 #  official duties are not subject to copyright protection and are in the public
 #  domain.
-#  
+#
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
-#  
+#  quality, reliability, or any other characteristic.
+#
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
 #  fitness for a particular purpose, and noninfringement.  In no event shall the
@@ -17,12 +17,12 @@
 #  liability, whether in an action of contract, tort or otherwise, arising from,
 #  out of or in connection with the software or the use or other dealings in the
 #  software.
-#  
+#
 #  Public domain portions of this software can be redistributed and/or modified
 #  freely, provided that any derivative works bear some notice that they are
 #  derived from it, and any modified versions bear some notice that they have
-#  been modified. 
-#  
+#  been modified.
+#
 #  Copyrighted portions of the software are annotated within the source code.
 #  Open Source Licenses, included in the source code, apply to the applicable
 #  copyrighted portions.  Copyrighted portions of the software are not in the
@@ -33,8 +33,9 @@
 ##          help_window.py          ##
 ##  ------------------------------- ##
 ##      Writen by: Jason Deters     ##
+##      Edited by: Joseph Gutenson  ##
 ##  ------------------------------- ##
-##    Last Edited on: 2020-06-22    ##
+##    Last Edited on: 2021-11-16    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -124,7 +125,7 @@ class Main(object):
             images_folder = os.path.join(sys.prefix, 'images')
             graph_icon_file = os.path.join(images_folder, 'Graph.ico')
             self.master.wm_iconbitmap(graph_icon_file)
-        
+
         # Create an additional level of frame just so everything stays together when the window is maximized
         self.primary_frame = ttk.Frame(self.master)
         self.primary_frame.grid()
@@ -135,7 +136,7 @@ class Main(object):
         # Create separate frame for Textbox and Scrollbar
         self.text_frame = ttk.Frame(self.primary_frame)
         self.text_frame.grid(row=0, column=0, sticky="nsew", padx=25, pady=0)
-    
+
         # Create General Info
         self.label_general_top=ttk.Label(self.text_frame,
                                          text="General Information",
@@ -146,8 +147,8 @@ class Main(object):
         self.general_text = tkinter.Text(self.text_frame, height=12, width=119) # creating a textbox for getting address
         self.scrollbar = tkinter.ttk.Scrollbar(self.text_frame)  # making a scrolbar with entry test text field
         self.general_text.config(yscrollcommand=self.scrollbar.set)  # setting scrolbar to y-axis
-        self.scrollbar.config(command=self.general_text.yview)  # setting the scrolbar to entry test textbox        
-        self.general_text.insert('end', ABOUT_HELP_TEXT) # Inserting the About/Help Text 
+        self.scrollbar.config(command=self.general_text.yview)  # setting the scrolbar to entry test textbox
+        self.general_text.insert('end', ABOUT_HELP_TEXT) # Inserting the About/Help Text
         self.general_text.config(state='disabled')
         self.general_text.grid(column=0, row=1, sticky='nsew') # set entry to Specific column of bottom frame grid
         self.scrollbar.grid(column=1, row=1, sticky='nsw') # set self.scrollbar to Specific column of bottom frame grid
@@ -167,27 +168,27 @@ class Main(object):
         self.add_reference(frame='Usage-Single',
                            title='How to read the output of a single-point analysis:',
                            pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Single-Point Analysis.pdf'),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Single-Point Analysis.pdf",
+                           pdf_url=r"https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Single-Point Analysis.pdf",
                            youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for a given date:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Single Point - Single Date.pdf'),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Single Date.pdf",
+                           pdf_url=r"https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Single Date.pdf",
                            youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for several dates at once:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Multiple Dates.pdf"),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Multiple Dates.pdf",
+                           pdf_url=r"https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Multiple Dates.pdf",
                            youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis for many dates using a spreadsheet:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf"),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf",
+                           pdf_url=r"https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Many Dates Using CSV Input.pdf",
                            youtube_url=None)
         self.add_reference(frame='Usage-Single',
                            title='How to generate a single-point analysis at a daily frequency for a given date range:',
                            pdf_local_path=os.path.join(docs_folder, "APT Walkthrough - Single Point - Daily Frequency Date Range.pdf"),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Daily Frequency Date Range.pdf",
+                           pdf_url=r"https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Single Point - Daily Frequency Date Range.pdf",
                            youtube_url=None)
         self.add_separator(self.central_buttons_frame)
 
@@ -204,17 +205,17 @@ class Main(object):
         self.add_reference(frame='Usage-Watershed',
                            title='How to read the output of a Watershed analysis:',
                            pdf_local_path=os.path.join(docs_folder, 'APT - How to Read the Output of a Watershed Analysis.pdf'),
-                           pdf_url=r"https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Watershed Analysis.pdf",
+                           pdf_url=r"https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT - How to Read the Output of a Watershed Analysis.pdf",
                            youtube_url=None)
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using the USGS Watershed Boundary Dataset:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Watershed - WBD.pdf'),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - WBD.pdf",
+                           pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - WBD.pdf",
                            youtube_url=None)
         self.add_reference(frame='Usage-Watershed',
                            title='How to generate a watershed analysis using a custom Watershed Polygon:',
                            pdf_local_path=os.path.join(docs_folder, 'APT Walkthrough - Watershed - Custom.pdf'),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - Custom.pdf",
+                           pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/APT Walkthrough - Watershed - Custom.pdf",
                            youtube_url=None)
         self.add_separator(self.central_buttons_frame)
 
@@ -228,19 +229,14 @@ class Main(object):
         self.row += 1
         # Create/Grid ITEMS for WATERSHED SCALE USAGE
         self.add_reference(frame='Methodology',
-                           title='User Guide (Narrative Format):',
-                           pdf_local_path=os.path.join(docs_folder, 'APT - User Guide.pdf'),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - User Guide.pdf",
-                           youtube_url=None)
-        self.add_reference(frame='Methodology',
-                           title="Detailed Methodology - Step-by-step Description the Entire Process:",
-                           pdf_local_path=os.path.join(docs_folder, 'APT - Detailed Methodology.pdf'),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/APT - Detailed Methodology.pdf",
+                           title='Technical and User Guide (Gutenson and Deters, 2021):',
+                           pdf_local_path=os.path.join(docs_folder, 'Gutenson and Deters.pdf'),
+                           pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/Gutenson and Deters.pdf",
                            youtube_url=None)
         self.add_reference(frame='Methodology',
                            title='Accessing and Using Meteorological Data to Evaluate Wetland Hydrology (Sprecher and Warne, 2000):',
                            pdf_local_path=os.path.join(docs_folder, 'Sprecher and Warne.pdf'),
-                           pdf_url="https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/raw/master/help/Sprecher and Warne.pdf",
+                           pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/Sprecher and Warne.pdf",
                            youtube_url=None)
         self.add_separator(self.central_buttons_frame)
 
@@ -293,7 +289,7 @@ class Main(object):
                 root = os.path.dirname(module_path)
                 version_folder = os.path.join(root, 'v')
                 version_local_path = os.path.join(version_folder, local_file_name_no_ext)
-                version_url = 'https://raw.githubusercontent.com/jDeters-USACE/Antecedent-Precipitation-Tool/master/v/{}'.format(local_file_name_no_ext)
+                version_url = 'https://raw.githubusercontent.com/erdc/Antecedent-Precipitation-Tool/master/v/{}'.format(local_file_name_no_ext)
                 get_files.get_only_newer_version(file_url=pdf_url,
                                                  local_file_path=pdf_local_path,
                                                  version_url=version_url,
