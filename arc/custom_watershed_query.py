@@ -33,8 +33,9 @@
 ##     custom_watershed_query.py    ##
 ##  ------------------------------- ##
 ##      Copyright: Jason Deters     ##
+##      Edited by: Joseph Gutenson  ##
 ##  ------------------------------- ##
-##    Last Edited on: 2020-05-27    ##
+##    Last Edited on: 2021-12-16    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -124,7 +125,7 @@ def shapefile_sample(lat, lon, shapefile):
     #project, whatever it may be
     geo_ref = lyr_in.GetSpatialRef()
     # Parse horizontal units from CS String
-    horizontal_units = findHorizontalUnits(str(geo_ref))
+    original_horizontal_units = findHorizontalUnits(str(geo_ref))
     point_ref = ogr.osr.SpatialReference()
     point_ref.ImportFromEPSG(4326)
     ctran = ogr.osr.CoordinateTransformation(point_ref, geo_ref)
@@ -155,7 +156,7 @@ def shapefile_sample(lat, lon, shapefile):
 
     # Get Area of selected HUC
     supported_units = ['meter', 'meters' 'foot', 'feet', 'us feet', 'us foot', 'us_foot', 'foot_us']
-    if not horizontal_units.lower() in supported_units:
+    if not original_horizontal_units.lower() in supported_units:
         # Transform geometry to Albers
         selected_feature_geometry.Transform(transform_source_to_albers)
         # Update horizontal units
@@ -259,7 +260,7 @@ def shapefile_sample(lat, lon, shapefile):
                 num_points -= 1
                 points_selected += 1
                 previously_selected_points.append(test_pt)
-                if not horizontal_units.lower() in supported_units:
+                if not original_horizontal_units.lower() in supported_units:
                     [wgs_lon, wgs_lat, z] = transform_albers_to_wgs.TransformPoint(test_x, test_y)
                 else:
                     [wgs_lon, wgs_lat, z] = rtran.TransformPoint(test_x, test_y)

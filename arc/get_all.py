@@ -8,7 +8,7 @@
 #
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
+#  quality, reliability, or any other characteristic.
 #
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
@@ -34,8 +34,9 @@
 ##           get_all.py             ##
 ##  ------------------------------- ##
 ##     Written by: Jason Deters     ##
+##     Edited by: Joseph Gutenson   ##
 ##  ------------------------------- ##
-##    Last Edited on: 2020-06-22    ##
+##    Last Edited on: 2021-11-16    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -86,7 +87,7 @@ def get_latest_release():
 
 def attempt_repair():
     local_file_path = os.path.join(ROOT_FOLDER, 'APT Repair Package.zip')
-    file_url = r'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/Antecedent Precipitation Tool.zip'
+    file_url = r'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/Antecedent Precipitation Tool.zip'
     local_file_exists = os.path.exists(local_file_path)
     if local_file_exists:
         try:
@@ -105,7 +106,7 @@ def ensure_version_file():
                                  local_file_path=local_file_path)
 
 def ensure_wbd_folder():
-    file_url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/WBD.zip'
+    file_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/WBD.zip'
     gis_folder = os.path.join(ROOT_FOLDER, 'GIS')
     local_file_path = os.path.join(gis_folder, "WBD.zip")
     wbd_folder = os.path.join(gis_folder, "WBD")
@@ -130,7 +131,7 @@ def ensure_us_shp_folder():
             os.remove(local_file_path)
         except Exception:
             pass
-        file_url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0.3/us_shp.zip'
+        file_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0.3/us_shp.zip'
         get_files.ensure_file_exists(file_url=file_url,
                                     local_file_path=local_file_path,
                                     extract_path=gis_folder)
@@ -145,7 +146,7 @@ def ensure_climdiv_folder():
             os.remove(local_file_path)
         except Exception:
             pass
-        file_url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0.3/climdiv.zip'
+        file_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0.3/climdiv.zip'
         get_files.ensure_file_exists(file_url=file_url,
                                     local_file_path=local_file_path,
                                     extract_path=gis_folder)
@@ -168,55 +169,55 @@ def ensure_WIMP():
 
 def ensure_libiomp5md():
     local_file_path = os.path.join(ROOT_FOLDER, 'libiomp5md.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/libiomp5md.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/libiomp5md.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_avx2():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_avx2.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx2.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx2.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_core():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_core.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_core.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_core.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_intel_thread():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_intel_thread.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_intel_thread.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_intel_thread.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_p4m3():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_p4m3.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_p4m3.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_p4m3.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_vml_p4():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_vml_p4.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_vml_p4.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_vml_p4.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_avx():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_avx.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_avx512():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_avx512.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx512.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx512.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
 def ensure_mkl_p4():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_p4.dll')
-    url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_p4.dll'
+    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_p4.dll'
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
