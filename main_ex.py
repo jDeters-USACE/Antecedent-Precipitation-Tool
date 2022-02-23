@@ -44,8 +44,7 @@ import multiprocessing
 # Import Custom Libraries
 import arc
 
-TITLE = """
-
+TITLE = r"""
      ++++  +++  ++++                     +++  ++++  +++                     _                    _            _
      hNNN +NNNy hNNm                    yNNN+ mNNd oNNN+        /\         | |                  | |          | |
      hMMMhhMMMmymMMN                    hMMMhyNMMmyhMMM+       /  \   _ __ | |_ ___  ___ ___  __| | ___ _ __ | |_
@@ -64,8 +63,8 @@ TITLE = """
      hMMMMMMNNMMMMMMMMMMMm         mMMMMMMMMMMMNNNMMMMMo      |_|\___/ \___/|_|         U.S. Army Corps of Engineers
      hMMMMMMMMMMMMMMMMMMMNhhhhhhhhhNMMMMMMMMMMMMMMMMMMMo
      ymmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm+
-
 """
+
 def ula_window():
     # Launch ULA
     APP = arc.ula_window.Main()
