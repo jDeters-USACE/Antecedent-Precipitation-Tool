@@ -7,8 +7,7 @@ Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/erdc
 An automation tool that evaluates three climatological parameters to assist in the making and documenting of various determinations required by policy for the execution of USACE&#39;s Regulatory Program.
 
 ## Scale
-The tool can perform its analyses at a single point, for the consideration of wetland hydrology, or it can be configured to run on a watershed scale to help support a typical year analysis.
-
+The tool can perform its analyses at a single point or at various watersheds scales to evaluate the impact of antecedent precipitation on local hydrologic conditions.
 
 ## Usage
 
@@ -94,11 +93,6 @@ Basic Methodology for each determination
   - Attempt to backfill the missing dates from the Primary Station with the resorted stations until there are no missing dates.
 
 **Forthcoming improvements in the newest version**
-
-- Secondary Station candidates will be ranked by similarity.
-
-  - The average difference in PRCP values on overlapping dates will be calculated
-  - The weighted Difference values will be augmented to incorporate the avg. diff
 
 - NOAA&#39;s new Daily Gridded PRCP Dataset will be used, when:
 
