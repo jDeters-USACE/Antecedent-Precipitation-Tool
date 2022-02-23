@@ -1,6 +1,6 @@
 # Antecedent Precipitation Tool (APT)
 ## Where can I get it?
-USACE has now migrated the current USACE version of the APT to [**ERDC's Github**](https://github.com/erdc/Antecedent-Precipitation-Tool/releases)
+USACE has now migrated the current USACE version of the APT to [**ERDC's Github page**](https://github.com/erdc/Antecedent-Precipitation-Tool/releases).
 
 ## What is it?
 
