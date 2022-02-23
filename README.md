@@ -2,8 +2,6 @@
 ## Where can I get it?
 USACE has now migrated the current USACE version of the APT to [**ERDC's Github**](https://github.com/erdc/Antecedent-Precipitation-Tool/releases)
 
-Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/latest)
-
 ## What is it?
 
 An automation tool that evaluates three climatological parameters to assist in the making and documenting of various determinations required by policy for the execution of USACE&#39;s Regulatory Program.
