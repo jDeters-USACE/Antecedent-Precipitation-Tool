@@ -6,11 +6,9 @@ Follow the instructions on the [**LATEST RELEASE PAGE**](https://github.com/erdc
 
 An automation tool that evaluates three climatological parameters to assist in the making and documenting of various determinations required by policy for the execution of USACE&#39;s Regulatory Program. 
 
-Below is a video outlining the functionality of the APT.
+Here is a video outlining the functionality of the APT.
 
 [![Watch the video](https://img.youtube.com/vi/Dh48uHsU8TM/hqdefault.jpg)](https://www.youtube.com/watch?v=Dh48uHsU8TM)
-
-<html><iframe  title="Antecedent Precipitation Tool (APT) Demo (version 1.0.20)" width="480" height="390" src="https://www.youtube.com/watch?v=Dh48uHsU8TM" frameborder="0" allowfullscreen></iframe></html>
 
 ## Scale
 The tool can perform its analyses at a single point or at various watersheds scales to evaluate the impact of antecedent precipitation on local hydrologic conditions.
