@@ -8,7 +8,7 @@ An automation tool that evaluates three climatological parameters to assist in t
 
 Below is a video outlining the functionality of the APT.
 
-[![Watch the video](https://www.youtube.com/watch?v=Dh48uHsU8TM/default.jpg)](https://www.youtube.com/watch?v=Dh48uHsU8TM)
+[![Watch the video]](https://www.youtube.com/watch?v=Dh48uHsU8TM)
 
 ## Scale
 The tool can perform its analyses at a single point or at various watersheds scales to evaluate the impact of antecedent precipitation on local hydrologic conditions.
