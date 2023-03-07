@@ -44,7 +44,6 @@
 import os
 import time
 import winshell
-import multiprocessing
 
 
 def create_shortcut_unfrozen():

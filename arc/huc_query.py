@@ -49,7 +49,7 @@ import sys
 import random
 
 # Import 3rd Party Libraries
-import ogr
+from osgeo import ogr
 ogr.UseExceptions()
 
 # Import Custom Libraries
@@ -447,8 +447,8 @@ def get_huc2_package(huc2):
 
 
 if __name__ == '__main__':
-    import time
-    start_time = time.clock()
+    from datetime import datetime
+    start_time = datetime.now()
 #    huc, sampling_points, huc_square_miles = id_and_sample(lat=40.5454,
 #                                                           lon=-110.239,
 #                                                           watershed_scale="HUC8")
@@ -482,7 +482,7 @@ if __name__ == '__main__':
 #    print('Sampling Points:')
 #    for point in sampling_points:
 #        print(' {}'.format(point))
-#    duration = time.clock() - start_time
+#    duration = datetime.now() - start_time
 #    print('Processing took {} seconds'.format(duration))
 
 

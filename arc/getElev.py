@@ -78,10 +78,8 @@ L = JLog.PrintLog()
 def get_json_multiple_ways(url):
     """Tries to pull JSON data from a URL using urllib3 first and then requests"""
     log = JLog.PrintLog()
-    if 'https://nationalmap.gov/epqs' in url:
-        base_url = 'https://nationalmap.gov/epqs'
-    elif 'https://ned.usgs.gov/epqs' in url:
-        base_url = 'https://ned.usgs.gov/epqs'
+    if 'https://epqs.nationalmap.gov/v1' in url:
+        base_url = 'epqs.nationalmap.gov'
     # Common USGS Error Message
     temp_unavailable_message = 'The requested service is temporarily unavailable.  Please try later.'
     unavailable_error_count = 0
@@ -152,7 +150,8 @@ def checkUSA(lat, lon):
     return inUSA
 
 def elevUSGS_nationalmap(lat, lon, units='Feet', batch=False):
-    url = u'https://nationalmap.gov/epqs/pqs.php?x={}&y={}&output=json&units={}'.format(lon, lat, units)
+    url = u'https://epqs.nationalmap.gov/v1/json?x={}&y={}&wkid=4326&units=Feet&includeDate=false'
+    url = url.format(lon, lat)
     # Pre-set Elevation to USGS Server's fail code
     elevation = "-1000000"
     # Get JSON format text from url Body
@@ -163,59 +162,15 @@ def elevUSGS_nationalmap(lat, lon, units='Feet', batch=False):
         seconds = ((x+1)*3)
         try:
             json_result = get_json_multiple_ways(url)
-            service = json_result['USGS_Elevation_Point_Query_Service']
-            query = service['Elevation_Query']
-            elevation = query['Elevation']
-            return elevation
+            return json_result["value"]
         except Exception:
             if x < 2:
                 L.Wrap('  Attempt {} failed, trying again in 1 second...'.format((x+1)))
                 time.sleep(1)
             else:
                 L.Wrap('  Attempt {} failed.'.format((x+1)))
-    # Try Selenium Requests Method if Requests fails
-    L.Wrap('---Urllib3 and Requests Modules Failed----')
-    L.Wrap('Attempting to collect the data through web-browser automation...')
-    instance = selenium_operations.getJSON(url)
-    json_result = instance()
-    # Switch to manual entry if web requests are not working
-    service = json_result['USGS_Elevation_Point_Query_Service']
-    query = service['Elevation_Query']
-    elevation = query['Elevation']
-    return elevation
 
-def elevUSGS_ned(lat, lon, units='Feet', batch=False):
-    url = u'https://ned.usgs.gov/epqs/pqs.php?x={}&y={}&units={}&output=json'.format(lon, lat, units)
-    # Pre-set Elevation to USGS Server's fail code
-    elevation = "-1000000"
-    # Get JSON format text from url Body
-    if not batch:
-        L.Wrap('Request URL: {}'.format(url))
-    # Attempting to use standard requests style OR urllib2 module
-    for x in range(3):
-        seconds = ((x+1)*3)
-        try:
-            json_result = get_json_multiple_ways(url)
-            service = json_result['USGS_Elevation_Point_Query_Service']
-            query = service['Elevation_Query']
-            elevation = query['Elevation']
-            return elevation
-        except Exception:
-            if x < 2:
-                L.Wrap('  Attempt {} failed, trying again in 1 second...'.format((x+1)))
-                time.sleep(1)
-            else:
-                L.Wrap('  Attempt {} failed.'.format((x+1)))
-    # Try Selenium Requests Method if Requests fails
-    L.Wrap('---Urllib3 and Requests Modules Failed----')
-    L.Wrap('Attempting to collect the data through web-browser automation...')
-    instance = selenium_operations.getJSON(url)
-    json_result = instance()
-    # Switch to manual entry if web requests are not working
-    service = json_result['USGS_Elevation_Point_Query_Service']
-    query = service['Elevation_Query']
-    elevation = query['Elevation']
-    return elevation
+    # Removed Selenium & manual fallback, significant changes with updated API
 
 def main(lat, lon, units='Feet', epqs_variant='nationalmap'):
     L.Wrap('Querying Elevation at Observation Point ({}, {})...'.format(lat, lon))
@@ -224,8 +179,6 @@ def main(lat, lon, units='Feet', epqs_variant='nationalmap'):
 #        L.Wrap('Point is within USA boundary. Using USGS Elevation Query Service...')
     if epqs_variant == 'nationalmap':
         elevation = elevUSGS_nationalmap(lat, lon)
-    elif epqs_variant == 'ned':
-        elevation = elevUSGS_ned(lat, lon)
     if elevation == "-1000000":
         L.Wrap('USGS Elevation Querry Failed. Using https://www.freemaptools.com/elevation-finder.htm...')
         elevation = selenium_operations.global_elev_query(lat, lon)
@@ -346,4 +299,4 @@ if __name__ == '__main__':
 #    L.Wrap('-----------------------------------------------------------')
 #    elev = main(27.748181, -103.632760)
 
-#https://nationalmap.gov/epqs/pqs.php?x=-153.321123&y=65.055219&output=json&units=Feet
+#'https://epqs.nationalmap.gov/v1/json?x=-153.321123&y=65.055219&wkid=4326&units=Feet&includeDate=false'

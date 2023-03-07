@@ -34,21 +34,26 @@
 ##  ------------------------------- ##
 ##      Writen by: Jason Deters     ##
 ##      Edited by: Joseph Gutenson  ##
+##      Edited by: Chase Hamilton   ##
 ##  ------------------------------- ##
-##    Last Edited on: 2021-12-28    ##
+##    Last Edited on: 2022-11-11    ##
 ##  ------------------------------- ##
 ######################################
 
 # Import Standard Libraries
-import os
 import math
-import time
+import multiprocessing
+from datetime import datetime, timedelta
 
-# Import 3rd Party Libraries
+# Import 3rd party libraries
 import netCDF4
 import numpy
 from geopy.distance import great_circle
 import pandas
+
+
+RECENT_CHECK = False
+
 
 def tunnel_fast(latvals, lonvals, lat0, lon0):
     '''
@@ -79,28 +84,30 @@ def tunnel_fast(latvals, lonvals, lat0, lon0):
     x = numpy.unravel_index(minindex_1d, latvals.shape)
     return iy_min, ix_min
 
-
-def get_closest_coordinates(dataset, lat, lon):
-    print('Finding closest coordinates...')
-    start_time = time.clock()
-    latvals = dataset.variables['lat'][:]
-    lonvals = dataset.variables['lon'][:]
-    test_coords = (lat, lon)
-    lowest_distance = 9999999
-    for dataset_lat in latvals:
-        for dataset_lon in lonvals:
-            dataset_coords = (dataset_lat, dataset_lon)
-            distance = great_circle(test_coords, dataset_coords).miles
-            if distance < lowest_distance:
-                lowest_distance = distance
-                closest_lat = dataset_lat
-                closest_lon = dataset_lon
-    time_taken = time.clock() - start_time
-    print('Found closest coordinates in {} seconds'.format(time_taken))
-    print('Closest = {}, {}'.format(closest_lat, closest_lon))
-    return closest_lat, closest_lon
-
-#LAT, LON = get_closest_coordinates(DATASET, 38.5, -121.5)
+###
+#    Deprecated in favor of the numpy implementation below
+#
+###
+#def get_closest_coordinates(dataset, lat, lon):
+#    print('Finding closest coordinates...')
+#    start_time = datetime.now()
+#    latvals = dataset.variables['lat'][:]
+#    lonvals = dataset.variables['lon'][:]
+#    test_coords = (lat, lon)
+#    lowest_distance = 9999999
+#    for dataset_lat in latvals:
+#        for dataset_lon in lonvals:
+#            dataset_coords = (dataset_lat, dataset_lon)
+#            distance = great_circle(test_coords, dataset_coords).miles
+#            if distance < lowest_distance:
+#                lowest_distance = distance
+#                closest_lat = dataset_lat
+#                closest_lon = dataset_lon
+#    time_taken = datetime.now() - start_time # No longer used
+#    print('Found closest coordinates in {} seconds'.format(time_taken))
+#    print('Closest = {}, {}'.format(closest_lat, closest_lon))
+#    return closest_lat, closest_lon
+###
 
 def get_closest_coordinates_numpy(dataset, lat0, lon0):
     print('Creating complete list of coordinates...')
@@ -117,25 +124,24 @@ def get_closest_coordinates_numpy(dataset, lat0, lon0):
     lat_degree_vals_numpy = numpy.array(lat_array_list)
     lon_degree_vals_numpy = numpy.array(lon_array_list)
     print('Locating closest coordinate pair...')
-    calc_start = time.clock()
     rad_factor = math.pi/180.0 # for trignometry, need angles in radians
-    # Read latitude and longitude from file into numpy arrays
+    
+    # Read latitude from file into numpy arrays
     latvals = lat_degree_vals_numpy * rad_factor
-    lonvals = lon_degree_vals_numpy * rad_factor
-    #ny, nx = latvals.shape
     lat0_rad = lat0 * rad_factor
-    lon0_rad = lon0 * rad_factor
-    # Compute numpy arrays for all values, no loops
-    clat,clon = numpy.cos(latvals), numpy.cos(lonvals)
-    slat,slon = numpy.sin(latvals), numpy.sin(lonvals)
-    delX = numpy.cos(lat0_rad)*numpy.cos(lon0_rad) - clat*clon
-    delY = numpy.cos(lat0_rad)*numpy.sin(lon0_rad) - clat*slon
-    delZ = numpy.sin(lat0_rad) - slat;
-    dist_sq = delX**2 + delY**2 + delZ**2
-    minindex_1d = dist_sq.argmin()  # 1D index of minimum element
+    
+    # Find nearest grid cell centroid using Haversine Distance
+    r = 6371 #radius of the earth in km
+    dlat = rad_factor * (lat_degree_vals_numpy - lat0)
+    dlon = rad_factor * (lon_degree_vals_numpy - lon0)
+    a = numpy.sin(dlat/2)**2 + numpy.cos(lat0_rad) * numpy.cos(latvals) * numpy.sin(dlon/2)**2
+    c = 2 * numpy.arctan2(numpy.sqrt(a), numpy.sqrt(1-a))
+    distance = c * r # in units of km
+    distance_min = numpy.amin(distance)*0.621371
+    minindex_1d = distance.argmin()  # 1D index of minimum element
     closest_lat = lat_degree_vals_numpy[minindex_1d]
     closest_lon = lon_degree_vals_numpy[minindex_1d]
-    time_taken = time.clock() - calc_start
+    
     # Convert to positions
     n = 0
     for lat_degree_val in lat_degree_vals:
@@ -147,32 +153,145 @@ def get_closest_coordinates_numpy(dataset, lat0, lon0):
         if lon_degree_val == closest_lon:
             lon_index = n
         n += 1
-    return closest_lat, lat_index, closest_lon, lon_index
+    return closest_lat, lat_index, closest_lon, lon_index, distance_min, lat_array_list, lon_array_list
 
-def get_nc_files():
-    # netcdf_folder = r'\\coe-spknv001sac.spk.ds.usace.army.mil\EGIS_GEOMATICS\Regulatory\BaseData\Climatology\nclimdivd\nclimdivd-alpha-nc'
-    netcdf_folder = r'D:\2020_APT_SON\Gridded_Rainfall'
+
+### Check if connectivity exists to the NOAA THREDDS server
+### Only check once every three minutes, to make sure we're not overloading them
+
+def check_thredds_status():
+    global RECENT_CHECK
+
+    if RECENT_CHECK:
+        if datetime.now() - RECENT_CHECK[0] < timedelta(minutes=3):
+            return RECENT_CHECK[1]
+    
+    try:
+        netCDF4.Dataset("https://www.ncei.noaa.gov/thredds/dodsC/nclimgrid-daily/1990/ncdd-199001-grd-scaled.nc")
+        good = True
+    except:
+        good = False
+
+    RECENT_CHECK = (datetime.now(), good)
+    return good
+
+
+def get_nc_files(prcp_netcdf_folder, station_count_netcdf_folder, observation_date):
+    year = observation_date.year
+    month = observation_date.month
+
+    month += 3
+
+    if month > 12:
+        year += 1
+        month -= 12
+
+    current_time = datetime.now()
+
+    if current_time.year <= year and current_time.month <= month:
+        month = current_time.month - 2
+        if month < 1:
+            month += 12
+        year = current_time.year - 1
+
+    end_date = datetime(year=year, month=month, day=1)
+
     nc_dates_and_files = []
-    for root, directories, file_names in os.walk(netcdf_folder):
-        for file_name in file_names:
-            pre = file_name[:5]
-            post = file_name[11:]
-            date = file_name[5:11]
-            file_path = os.path.join(root, file_name)
-            nc_dates_and_files.append([date, file_path])
-            # if pre == 'prcp-':
-            #     if post == '-grd-scaled.nc':
-            #         file_path = os.path.join(root, file_name)
-            #         nc_dates_and_files.append([date, file_path])
+    #first_year = datetime(1951,1,1)
+    first_year = datetime(end_date.year - 35,1,1)
+    
+    if first_year < datetime(1951,1,1):
+        first_year = datetime(1951,1,1)
+
+    years = pandas.date_range(first_year, end_date,freq='AS').year.tolist()
+    months = ['01','02','03','04','05','06','07','08','09','10','11','12']
+
+    for year in years:
+        year = str(year)
+        for month in months:
+            if datetime.strptime("{}{}".format(year, month), "%Y%m") > end_date:
+                break
+            
+            date = '{0}{1}'.format(year,month)
+            
+            station_count_file = 'ncddsupp-{0}-obcounts.nc'.format(date)
+            station_count_file_path = '{0}/{1}/{2}'.format(station_count_netcdf_folder,year,station_count_file)
+            
+            # create the paths to the precip netcdfs
+            prcp_file = 'ncdd-{0}-grd-scaled.nc'.format(date)
+            prcp_file_path = '{0}/{1}/{2}'.format(prcp_netcdf_folder,year,prcp_file)
+            nc_dates_and_files.append([date, prcp_file_path, station_count_file_path])
+            
     nc_dates_and_files.sort(key=lambda x: x[0], reverse=False)
-    nc_files = []
-    for nc_date_and_file in nc_dates_and_files:
-        nc_files.append(nc_date_and_file[1])
-    return nc_files
+    return nc_dates_and_files
+
+
+def nc_file_worker(args):
+
+    # Split input tuple into constituents
+    nc_file = args[0]
+    lat_index = args[1]
+    lon_index = args[2]
+
+    # Get precip file date from nc_file list
+    file_date = nc_file[0]
+    
+    # Instantiate empty values
+    total_rows = 0
+    data_rows = 0
+    blank_rows = 0
+
+    prcp_values = []
+    timestamps = []
+    station_count_values = []
+
+    # Open precip dataset
+    prcp_dataset = netCDF4.Dataset(nc_file[1], 'r')
+    prcp = prcp_dataset.variables['prcp']
+    timevar = prcp_dataset.variables['time']
+    timeunits = timevar.units
+    times = timevar[:]
+
+    # Open station count dataset
+    station_count_dataset = netCDF4.Dataset(nc_file[2], 'r')
+    station_count = station_count_dataset.variables['cntp']
+
+    # Pull relevant data subset from precip & station count datasets
+    prcp_vals = prcp[:, lat_index, lon_index]
+    station_count_vals = station_count[:, lat_index, lon_index]
+
+    # Process data and update variables
+    for x_time in range(len(times)):
+        total_rows += 1
+        prcp_val = prcp_vals[x_time]
+
+        if str(prcp_val) != '--':
+            data_rows += 1
+            prcp_values.append(prcp_val)
+
+            time_val = netCDF4.num2date(times[x_time], timeunits)
+            timestamp = pandas.Timestamp(str(time_val))
+
+            timestamps.append(timestamp)
+
+        else:
+            blank_rows += 1
+
+        station_count_val = station_count_vals[x_time]
+        station_count_values.append(station_count_val)
+
+    # Clean up NetCDF file connections
+    prcp_dataset.close()
+    del(prcp_dataset)
+    station_count_dataset.close()
+    del(station_count_dataset)
+
+    return (file_date, prcp_values, timestamps, station_count_values, total_rows, data_rows, blank_rows)
+
 
 class get_point_history(object):
 
-    def __init__(self, lat, lon):
+    def __init__(self, lat, lon, observation_date=datetime.now()):
         self.lat = lat
         self.lon = lon
         self.closest_lat = None
@@ -184,67 +303,92 @@ class get_point_history(object):
         self.prcp_data = []
         self.timestamps = []
         self.prcp_values = []
+        self.station_count_values = []
         self.total_rows = 0
         self.blank_rows = 0
         self.data_rows = 0
-        self.entire_ts = None
+        self.entire_precip_ts = None
+        self.entire_station_count_ts = None
+        self.distance = 0
+        self.observation_date = observation_date
 
     def __call__(self):
         print('Getting complete PRCP history for ({}, {})...'.format(self.lat, self.lon))
-        self.nc_files = get_nc_files()
-        num_datasets = len(self.nc_files)
-        current_dataset = 0
+        netcdf_precip_folder = r'https://www.ncei.noaa.gov/thredds/dodsC/nclimgrid-daily'
+        netcdf_station_count_folder = r'https://www.ncei.noaa.gov/thredds/dodsC/nclimgrid-daily-auxiliary'
+        self.nc_files = get_nc_files(netcdf_precip_folder, netcdf_station_count_folder, self.observation_date)
+
+        # Open first dataset and get variables / basic info
+        nc_file = self.nc_files[0]
+
+        try:
+            prcp_dataset = netCDF4.Dataset(nc_file[1], 'r')
+
+            (self.closest_lat, self.lat_index, self.closest_lon, self.lon_index,
+             self.distance, lat_array_list, lon_array_list) = get_closest_coordinates_numpy(prcp_dataset, self.lat, self.lon)
+
+        except Exception as F:
+            pass
+
+        # Create list of all tasks
+        process_queue = []
+
         for nc_file in self.nc_files:
-            current_dataset += 1
-            try:
-                # Open dataset and get variables / basic info
-                dataset = netCDF4.Dataset(nc_file, 'r')
-                prcp = dataset.variables['prcp']
-                timevar = dataset.variables['time']
-                timeunits = timevar.units
-                times = timevar[:]
-                # Find closest Lat/Lon and set export path
-                if self.closest_lat is None or self.closest_lon is None:
-                    self.closest_lat, self.lat_index, self.closest_lon, self.lon_index = get_closest_coordinates_numpy(dataset, self.lat, self.lon)
-                    print('Closest coordinates in dataset = {}, {}'.format(self.closest_lat, self.closest_lon))
-                    query_coords = (self.lat, self.lon)
-                    grid_coords = (self.closest_lat, self.closest_lon)
-                    distance = great_circle(query_coords, grid_coords).miles
-                    print('Distance to center of grid = {} miles'.format(distance))
-                    print('Reading values from {} netCDF datasets...'.format(num_datasets))
-                # Collect/print/write relevant values
-                for x_time in range(len(times)):
-                    prcp_val = prcp[x_time, self.lat_index, self.lon_index]
-                    self.total_rows += 1
-                    if str(prcp_val) != '--':
-                        self.data_rows += 1
-                        self.prcp_values.append(prcp_val)
-                        time_val = netCDF4.num2date(times[x_time], timeunits)
-                        t_stamp = pandas.Timestamp(time_val)
-                        self.timestamps.append(t_stamp)
-                    else:
-                        self.blank_rows += 1
-            except Exception as F:
-                print('----------')
-                print('----EXCEPTION!!!------')
-                print('----------')
-                print('Error processing dataset {} of {}'.format(current_dataset, num_datasets))
-                dataset_name = os.path.split(nc_file)[1]
-                print('Dataset name = {}'.format(dataset_name))
-                print(str(F))
-                print('----------')
-                print('----EXCEPTION!!!------')
+            process_queue.append((nc_file, self.lat_index, self.lon_index))
+
+        process_number = min(multiprocessing.cpu_count() - 2, 12)
+        chunksize = process_number
+
+        # Create empty results dictionary
+        mp_results = {}
+
+        # Chunk and loop through chunks, necessary to not run into blocking issues on Windows
+        print("Downloading gridded time series data...\n")
+
+        for i in range(0, len(process_queue), chunksize):
+            chunk_start = datetime.now()
+
+            start_index = i
+            end_index = min(i + chunksize, len(process_queue))
+
+            partial_queue = process_queue[start_index:end_index]
+
+            mp_pool = multiprocessing.Pool(processes=process_number)
+
+            for result in mp_pool.map(nc_file_worker, partial_queue):
+                file_date, prcp_values, timestamps, station_count_values, total_rows, data_rows, blank_rows = result
+                mp_results[file_date] = (prcp_values, timestamps, station_count_values, total_rows, data_rows, blank_rows)
+
+                self.prcp_values += prcp_values
+                self.timestamps += timestamps
+                self.station_count_values += station_count_values
+                self.total_rows += total_rows
+                self.data_rows += data_rows
+                self.blank_rows += blank_rows
+
+            mp_pool.close()
+            mp_pool.join()
+
+            start_date = partial_queue[0][0][0]
+            start_date = start_date[:4] + "-" + start_date[4:]
+            end_date = partial_queue[-1][0][0]
+            end_date = end_date[:4] + "-" + end_date[4:]
+
+            print("{} through {}: {}".format(start_date, end_date, datetime.now() - chunk_start))
+
         print('----------')
         print('')
         print('All datasets processed.')
-        # Convert to pandas dataframe
         print('Converting data to TimeSeries format...')
-        self.entire_ts = pandas.Series(data=self.prcp_values,
+        self.entire_precip_ts = pandas.Series(data=self.prcp_values,
                                        index=self.timestamps,
-                                       dtype="object",
+                                       dtype="float64",
+                                       name='value')
+        self.entire_station_count_ts = pandas.Series(data=self.station_count_values,
+                                       index=self.timestamps,
+                                       dtype="float64",
                                        name='value')
         print('Conversion complete.')
-        # Print and log summary stats
         print('')
         print('-'*119)
         print('Total rows = {}'.format(self.total_rows))
@@ -256,19 +400,9 @@ class get_point_history(object):
 
 if __name__ == '__main__':
     COORD_LIST = []
-    COORD_LIST.append([36.5, -121.5])
-##    COORD_LIST.append([39.1122, -119.7603])
-##    COORD_LIST.append([46.925686, -117.683027])
-##    COORD_LIST.append([46.925718, -117.682981])
-##    COORD_LIST.append([37.197776, -117.813483])
-##    COORD_LIST.append([35.1919, -80.6567])
-##    COORD_LIST.append([49.354, -95.0625]) # Complete History
-##    COORD_LIST.append([38.790289, -120.798243]) # Kelsey
-##    COORD_LIST.append([38.5, -121.5]) # Empty in previous tests, complete 03/12/2018
-##    COORD_LIST.append([36.5, -121.5]) # Sparse Stations
-    list_of_instances = []
+    COORD_LIST.append([35., -90.])
+    #list_of_instances = []
     for COORDS in COORD_LIST:
         instance = get_point_history(COORDS[0], COORDS[1])
         instance()
-        list_of_instances.append(instance)
-    raw_input("STALLING...")
+        #list_of_instances.append(instance)

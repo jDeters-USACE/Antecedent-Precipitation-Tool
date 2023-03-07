@@ -41,7 +41,7 @@
 
 """Calculates and stores all dates for the Antecedent Precipitation Tool"""
 
-import datetime
+from datetime import datetime, timedelta
 
 def rectify_inputs(year, month, day):
     "Test inputs and produce Datetime"
@@ -55,13 +55,13 @@ def rectify_inputs(year, month, day):
         month = str(month)
     observation_date = '{}-{}-{}'.format(year, month, day)
 
-    yesterday_datetime = datetime.datetime.today()- datetime.timedelta(days=2)
-    observation_datetime = datetime.datetime.strptime(observation_date, '%Y-%m-%d')
+    yesterday_datetime = datetime.today()- timedelta(days=2)
+    observation_datetime = datetime.strptime(observation_date, '%Y-%m-%d')
     if observation_datetime > yesterday_datetime:
         observation_datetime = yesterday_datetime
     return observation_datetime
 
-class Main(object):
+class DateCalc(object):
     """Calculates and stores all dates for the Antecedent Precipitation Tool"""
 
     def __init__(self, year, month, day):
@@ -106,16 +106,16 @@ class Main(object):
             self.normal_period_data_start_date = str(self.observation_year-32)+'-09-01'
             self.normal_period_end_date = str(self.observation_year-1) + '-09-30'
         # Calculate antecedent period start (90 days prior to obs_date)
-        antecedent_period_start_datetime = self.observation_datetime - datetime.timedelta(days=89)
+        antecedent_period_start_datetime = self.observation_datetime - timedelta(days=89)
         self.antecedent_period_start_date = antecedent_period_start_datetime.strftime('%Y-%m-%d')
         # Calculate graph start date (~7 months prior to obs_date)
-        start_month_datetime = self.observation_datetime - datetime.timedelta(days=203)
+        start_month_datetime = self.observation_datetime - timedelta(days=203)
         graph_start_month = start_month_datetime.strftime('%m')
         graph_start_year = start_month_datetime.strftime('%Y')
         self.graph_start_date = '{}-{}-01'.format(graph_start_year, graph_start_month)
         # Calculate graph end date (end of the previous month next year)
-        graph_start_datetime = datetime.datetime.strptime(self.graph_start_date, '%Y-%m-%d')
-        day_before_datetime = graph_start_datetime - datetime.timedelta(days=1)
+        graph_start_datetime = datetime.strptime(self.graph_start_date, '%Y-%m-%d')
+        day_before_datetime = graph_start_datetime - timedelta(days=1)
         graph_end_year = int(day_before_datetime.strftime('%Y')) + 1
         graph_end_month = day_before_datetime.strftime('%m')
         # Test for last date of month to be Leap-year-proof
@@ -124,19 +124,19 @@ class Main(object):
             last_day_of_month += 1
             test_date = '{}-{}-{}'.format(graph_end_year, graph_end_month, last_day_of_month)
             try:
-                graph_end_datetime = datetime.datetime.strptime(test_date, '%Y-%m-%d')
+                graph_end_datetime = datetime.strptime(test_date, '%Y-%m-%d')
                 self.graph_end_date = graph_end_datetime.strftime('%Y-%m-%d')
             except:
                 break
         # Determine actual expected end data (NOAA Data Availability)
-        two_days_prior_datetime = datetime.datetime.today() - datetime.timedelta(days=2)
+        two_days_prior_datetime = datetime.today() - timedelta(days=2)
         if graph_end_datetime > two_days_prior_datetime:
             self.actual_data_end_date = two_days_prior_datetime.strftime('%Y-%m-%d')
         else:
             self.actual_data_end_date = self.graph_end_date
 
 if __name__ == '__main__':
-    test = Main(1910, 1, 1)
+    test = DateCalc(1910, 1, 1)
     print(test.graph_start_date)
     print(test.graph_end_date)
     print(test.normal_period_data_start_date)

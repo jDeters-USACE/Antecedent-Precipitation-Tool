@@ -31,7 +31,7 @@
 import os
 import pandas
 import pickle
-import datetime
+from datetime import datetime
 
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -209,8 +209,8 @@ else:
     yMax = yMax
 
 # Force the Min and Max X Values to the Graph Dates
-graph_start_datetime = datetime.datetime.strptime(graph_start_date, '%Y-%m-%d')
-graph_end_datetime = datetime.datetime.strptime(graph_end_date, '%Y-%m-%d')
+graph_start_datetime = datetime.strptime(graph_start_date, '%Y-%m-%d')
+graph_end_datetime = datetime.strptime(graph_end_date, '%Y-%m-%d')
 ax1.set_xlim([graph_start_datetime, graph_end_datetime])
 
 

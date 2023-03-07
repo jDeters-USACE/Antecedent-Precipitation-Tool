@@ -41,7 +41,7 @@
 
 # Import Standard Libraries
 import time
-import datetime
+from datetime import datetime
 
 # Import 3rd Party Libraries
 import numpy
@@ -173,7 +173,7 @@ def parse_results(results_list):
 
 
 
-def create_summary(site_lat, site_long, observation_date, geographic_scope, huc, huc_size, results_list, watershed_summary_path):
+def create_summary(site_lat, site_long, observation_date, geographic_scope, huc, huc_size, results_list, watershed_summary_path, grid_selection):
     """Creates Summary of results and prints to pdf"""
     # Define Colors
     light_grey = (0.85, 0.85, 0.85)
@@ -208,10 +208,10 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     img = fig.figimage(X=logo, xo=0, yo=0)
     img.set_zorder(0)
 
-    ax1 = plt.subplot2grid((20, 9), (3, 1), colspan=4, rowspan=2)
-    ax2 = plt.subplot2grid((20, 9), (6, 1), colspan=4, rowspan=2)
-    ax3 = plt.subplot2grid((20, 9), (9, 1), colspan=4, rowspan=2)
-    ax4 = plt.subplot2grid((20, 9), (12, 0), colspan=9, rowspan=9)
+    ax1 = plt.subplot2grid((20, 9), (3, 1), colspan=4, rowspan=3)
+    ax2 = plt.subplot2grid((20, 9), (7, 1), colspan=4, rowspan=2)
+    ax3 = plt.subplot2grid((20, 9), (10, 1), colspan=4, rowspan=2)
+    ax4 = plt.subplot2grid((20, 9), (13, 0), colspan=9, rowspan=9)
     ax5 = plt.subplot2grid((20, 18), (3, 11), colspan=4, rowspan=7)
     ax1.set_zorder(1)
     ax2.set_zorder(1)
@@ -259,7 +259,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     from matplotlib import patheffects
 
     # Add Axis Titles
-    title_text_object = fig.suptitle('Antecedent Precipitation Tool v.1.0 - Watershed Sampling Summary', fontsize=17, color='white')
+    title_text_object = fig.suptitle('Antecedent Precipitation Tool v1.0 - Watershed Sampling Summary', fontsize=17, color='white')
     title_text_object.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
     ax1_title_object = ax1.set_title('User Inputs', color='white')
     ax1_title_object.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
@@ -274,20 +274,22 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     inputs_table_values = [
         ['Coordinates', '{}, {}'.format(round(float(site_lat), 6), round(float(site_long), 6))],
         ['Date', observation_date],
-        ['Geographic Scope', geographic_scope]
+        ['Geographic Scope', geographic_scope],
+#        ['Used Gridded Precipitaton', grid_selection]
     ]
 
     # Create Inputs Table Colors
     inputs_table_colors = [
         [light_grey, white],
         [light_grey, white],
-        [light_grey, white]
+        [light_grey, white],
+#        [light_grey, white]
     ]
 
     # Plot inputs_table
     inputs_table = ax1.table(cellText=inputs_table_values,
                              cellColours=inputs_table_colors,
-                             colWidths=[0.27, 0.355],
+                             colWidths=[0.4, 0.355],
                              cellLoc='center',
                              loc='lower center')
 
@@ -367,7 +369,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     sampling_point_table.scale(1, 1)
 
     # Get string of today's date
-    today_datetime = datetime.datetime.today()
+    today_datetime = datetime.today()
     today_str = today_datetime.strftime('%Y-%m-%d')
     # Add Generated on today's date text
     #date_generated_text = ax1.text(0.027, 0.153, "Generated on {}".format(today_str), size=10, color='white')

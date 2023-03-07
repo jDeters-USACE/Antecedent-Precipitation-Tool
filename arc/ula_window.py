@@ -31,18 +31,9 @@
 
 import os
 import sys
-import time
 import tkinter
 import tkinter.ttk
 import subprocess
-
-# Custom Libraries
-try:
-    from arc import shortcut
-    from arc import get_all
-except Exception:
-    import shortcut
-    import get_all
 
 
 USACE_ULA_TEXT = """This software was developed by United States Army Corps of Engineers (USACE)
@@ -76,7 +67,7 @@ copyrighted portions.  Copyrighted portions of the software are not in the
 public domain."""
 
 
-class Main(object):
+class UlaWindow(object):
     """GUI for the ULA of the  Antecedent Precipitation Tool"""
 
     def __init__(self):
@@ -245,5 +236,5 @@ class Main(object):
 
 
 if __name__ == '__main__':
-    APP = Main()
+    APP = UlaWindow()
     APP.run()

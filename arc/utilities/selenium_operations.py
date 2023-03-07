@@ -52,6 +52,10 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By
 from win32api import GetFileVersionInfo, LOWORD, HIWORD
 
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
 # Import Custom Libraries
 try:
     from . import JLog
@@ -107,14 +111,18 @@ class getJSON(object):
         # Set Driver Path for Chrome
         self.chrome_driver_path = get_chromedriver.get_chrome_driver_path()
         # Create Selenium Chrome Options class
-        self.chrome_options = webdriver.ChromeOptions()
+        #self.chrome_options = webdriver.ChromeOptions()
+        self.chrome_options = Options
         # Populate class with Chrome Options (supposedly increase stability)
         self.chrome_options.add_argument('--disable-extensions')
         self.chrome_options.add_argument('--no-sandbox')
         self.chrome_options.add_argument('--headless')
         # Instantiate webdriver
-        self.driver = webdriver.Chrome(self.chrome_driver_path,
-                                       chrome_options=self.chrome_options)
+        #self.driver = webdriver.Chrome(self.chrome_driver_path,
+        #                               chrome_options=self.chrome_options)
+        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
+                                       options=self.chrome_options)
+
         # Get open the URL with Selenium Instance
         self.driver.get(self.url)
         # Grab body and convert to JSON format
@@ -162,7 +170,8 @@ def global_elev_query(lat, lon, units='Feet'):
     chrome_driver_path = get_chromedriver.get_chrome_driver_path()
     log.Wrap('Chrome binary = {}'.format(chrome_driver_path))
     # Create Options object and set automation options
-    chrome_options = webdriver.ChromeOptions()
+    #chrome_options = webdriver.ChromeOptions()
+    chrome_options = Options()
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--headless')
@@ -170,7 +179,9 @@ def global_elev_query(lat, lon, units='Feet'):
 ##    chrome_options.add_argument('--ignore-certificate-errors-spki-list')
 ##    chrome_options.add_argument('--ignore-ssl-errors')
     # Create driver object
-    driver = webdriver.Chrome(chrome_driver_path, chrome_options=chrome_options)
+    #driver = webdriver.Chrome(chrome_driver_path, chrome_options=chrome_options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
+                              options=chrome_options)
     tries = 1
     while tries < 10:
         try:
@@ -220,9 +231,7 @@ def test_get_json():
     instance = getJSON(url)
     json_result = instance()
     # Parse JSON to get Elevation
-    service = json_result['USGS_Elevation_Point_Query_Service']
-    query = service['Elevation_Query']
-    elevation = query['Elevation']
+    elevation = json_result["value"]
     print('Elevation = {}'.format(elevation))
 
 def test_global_elev_query():

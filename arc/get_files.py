@@ -33,8 +33,9 @@
 ##          get_items.py            ##
 ##  ------------------------------- ##
 ##     Written by: Jason Deters     ##
+##      Edited by: Chase Hamilton   ##
 ##  ------------------------------- ##
-##    Last Edited on: 2020-06-22    ##
+##    Last Edited on: 2022-11-10    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -42,8 +43,9 @@
 import os
 import sys
 import requests
-import time
+from datetime import datetime
 import zipfile
+import time
 
 # Find module path
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -156,7 +158,7 @@ def ensure_file_exists(file_url, local_file_path, local_check_file=None,
             os.makedirs(download_dir)
         except Exception:
             pass
-        dl_start = time.clock()
+        dl_start = datetime.now()
         # Streaming with requests module
         num_bytes = 0
         count = 0
@@ -239,7 +241,7 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
             os.makedirs(download_dir)
         except Exception:
             pass
-        dl_start = time.clock()
+        dl_start = datetime.now()
         # Streaming with requests module
         num_bytes = 0
         count = 0
@@ -288,7 +290,7 @@ def get_only_newer_version(file_url, local_file_path, local_check_file=None,
 
 
 #if __name__ == '__main__':
-#    LOCAL_VERSION = check_local_version(version_local_path=r'D:\Code\Python\WinPythonARC_dev_EPA_dl_dl\core\main_ex_version.txt')
+#    LOCAL_VERSION = check_local_version(version_local_path=r'E:\Code\Python\WinPythonARC_dev_EPA_dl_dl\core\main_ex_version.txt')
 #    print(LOCAL_VERSION)
 
 #    ensure_file_exists(file_url='https://www.spk.usace.army.mil/Portals/12/documents/regulatory/upload/APT/WBD/HUC8_Albers.zip',

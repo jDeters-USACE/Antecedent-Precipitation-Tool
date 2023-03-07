@@ -1,15 +1,15 @@
 #  This software was developed by United States Army Corps of Engineers (USACE)
 #  employees in the course of their official duties.  USACE used copyrighted,
-#  open source code to develop this software, as such this software 
+#  open source code to develop this software, as such this software
 #  (per 17 USC § 101) is considered "joint work."  Pursuant to 17 USC § 105,
 #  portions of the software developed by USACE employees in the course of their
 #  official duties are not subject to copyright protection and are in the public
 #  domain.
-#  
+#
 #  USACE assumes no responsibility whatsoever for the use of this software by
 #  other parties, and makes no guarantees, expressed or implied, about its
-#  quality, reliability, or any other characteristic. 
-#  
+#  quality, reliability, or any other characteristic.
+#
 #  The software is provided "as is," without warranty of any kind, express or
 #  implied, including but not limited to the warranties of merchantability,
 #  fitness for a particular purpose, and noninfringement.  In no event shall the
@@ -17,12 +17,12 @@
 #  liability, whether in an action of contract, tort or otherwise, arising from,
 #  out of or in connection with the software or the use or other dealings in the
 #  software.
-#  
+#
 #  Public domain portions of this software can be redistributed and/or modified
 #  freely, provided that any derivative works bear some notice that they are
 #  derived from it, and any modified versions bear some notice that they have
-#  been modified. 
-#  
+#  been modified.
+#
 #  Copyrighted portions of the software are annotated within the source code.
 #  Open Source Licenses, included in the source code, apply to the applicable
 #  copyrighted portions.  Copyrighted portions of the software are not in the
@@ -82,7 +82,7 @@ import os
 import sys
 import time
 import traceback
-import datetime
+from datetime import datetime
 import subprocess
 import pickle
 
@@ -190,7 +190,7 @@ class wimp_checker(object):
 #            log.Wrap("  Supplying today's date as the 'Project Title' and hitting 'Return'")
             title_element = self.driver.find_element('name', 'yname')
             # Type Current Date in Input Box
-            current_date = datetime.datetime.now()
+            current_date = datetime.now()
             current_date_string = current_date.strftime("%Y-%m-%d")
             title_string = 'ARC Request - {}'.format(current_date_string)
             title_element.clear()
@@ -421,7 +421,7 @@ def calculate_wet_dry_table(wimp_rows, output_folder=None):
         dates for the dry season vary by locale and year.
         ..."
     """
-    csv_rows = []    
+    csv_rows = []
     # Create Main Printlog
     log = JLog.PrintLog(Indent=2)
     log.Wrap('Parsing scraped WebWimp values and Calculating Wet/Dry Season...')
@@ -485,7 +485,7 @@ def read_values_from_csv(output_folder=None):
 
 def get_season_from_rows(rows, month=None):
     """
-    Reads and reports cached WebWIMP results table and returns Wet/Dry Season 
+    Reads and reports cached WebWIMP results table and returns Wet/Dry Season
     """
     if month is None:
         month = 1
@@ -521,7 +521,7 @@ def get_season_from_rows(rows, month=None):
             log.Wrap('  | {} | {} | {} | {} | {} Season |'.format(mon, diff_four, dst_four, def_val_three, season))
         num += 1
     # Print bottom line of table
-    log.Wrap('   -------------------------------------- ')        
+    log.Wrap('   -------------------------------------- ')
     if month is None:
         selected_season = None
     return selected_season
@@ -533,12 +533,12 @@ class WimpScraper(object):
         self.rows = []
         self.wimp_checker_instance = None
         self.wimp_dict = None
-        self.batch_dict = None
+        self.batch_dict = dict()
         self.wimp_checker_executions = 0
         self.unpickle_dict()
-    
+
     def pickle_dict(self):
-        # Locate web_wimp_dict_pickle 
+        # Locate web_wimp_dict_pickle
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
@@ -574,7 +574,7 @@ class WimpScraper(object):
                         self.log.Wrap('WibWIMP Dictionary could not be cached.')
 
     def unpickle_dict(self):
-        # Locate web_wimp_dict_pickle 
+        # Locate web_wimp_dict_pickle
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
@@ -597,7 +597,7 @@ class WimpScraper(object):
             self.unpickle_dict()
         # Create new batch_dict
         self.batch_dict = dict()
-        # Locate webWIMP_Cache folder and 
+        # Locate webWIMP_Cache folder and
         utilities_path = os.path.dirname(os.path.realpath(__file__))
         python_scripts_path = os.path.dirname(utilities_path)
         root_path = os.path.dirname(python_scripts_path)
@@ -758,11 +758,11 @@ class WimpScraper(object):
 
 if __name__ == '__main__':
     WIMP_SCRAPER = WimpScraper()
-    WIMP_SCRAPER.get_season(lat=30.442473,
-                            lon=-90.268631,
-                            month=11,
+    WIMP_SCRAPER.get_season(lat=33.2098,
+                            lon=-87.5692,
+                            month=10,
                             watershed_analysis=True)
-    WIMP_SCRAPER.get_season(lat=30.442473,
-                            lon=-90.268631,
-                            month=11,
+    WIMP_SCRAPER.get_season(lat=33.2098,
+                            lon=-87.6692,
+                            month=10,
                             watershed_analysis=False)

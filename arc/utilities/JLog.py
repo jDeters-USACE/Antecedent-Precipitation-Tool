@@ -32,24 +32,23 @@
 ##  ------------------------------- ##
 ##             JLog.py              ##
 ##  ------------------------------- ##
-##      Writen by: Jason Deters     ##
+##     Written by: Jason Deters     ##
+##      Edited by: Chase Hamilton   ##
 ##  ------------------------------- ##
-##    Last Edited on:  2020-05-27   ##
+##    Last Edited on:  2022-11-10   ##
 ##  ------------------------------- ##
 ######################################
 
 # Import Standard Libraries
 import os
 import sys
-import time
 import traceback
 import textwrap
 import stat
-import multiprocessing
-import shlex
 import struct
-import platform
 import subprocess
+
+from datetime import datetime
 
 
 # Function Definitions
@@ -226,10 +225,12 @@ class PrintLog(object):
         return
 
     def Time(self, StartTime, Task):
-        elapsed_time = time.clock() - StartTime
+        elapsed_time = (datetime.now() - StartTime).seconds
+        
         if elapsed_time < 61:
             seconds = str(int(elapsed_time))
             time_str = "{} took {} seconds to complete".format(Task, seconds)
+        
         if elapsed_time > 60:
             minutes = int(elapsed_time / 60)
             seconds = int(elapsed_time - (minutes * 60))

@@ -131,10 +131,17 @@ def ensure_us_shp_folder():
             os.remove(local_file_path)
         except Exception:
             pass
-        file_url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0.3/us_shp.zip'
-        get_files.ensure_file_exists(file_url=file_url,
+        try:
+            file_url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/download/v1.0.21/us_shp.zip'
+            get_files.ensure_file_exists(file_url=file_url,
                                     local_file_path=local_file_path,
-                                    extract_path=gis_folder)
+                                    extract_path=us_shp_folder)
+        except:
+            file_url = 'https://www2.census.gov/geo/tiger/GENZ2021/shp/cb_2021_us_nation_5m.zip'
+            get_files.ensure_file_exists(file_url=file_url,
+                                    local_file_path=local_file_path,
+                                    extract_path=us_shp_folder)
+        
 
 def ensure_climdiv_folder():
     gis_folder = os.path.join(ROOT_FOLDER, 'GIS')
@@ -209,12 +216,6 @@ def ensure_mkl_avx():
     get_files.ensure_file_exists(file_url=url,
                                  local_file_path=local_file_path)
 
-def ensure_mkl_avx512():
-    local_file_path = os.path.join(ROOT_FOLDER, 'mkl_avx512.dll')
-    url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_avx512.dll'
-    get_files.ensure_file_exists(file_url=url,
-                                 local_file_path=local_file_path)
-
 def ensure_mkl_p4():
     local_file_path = os.path.join(ROOT_FOLDER, 'mkl_p4.dll')
     url = 'https://github.com/jDeters-USACE/Antecedent-Precipitation-Tool/releases/download/v1.0/mkl_p4.dll'
@@ -230,7 +231,6 @@ def ensure_binaries():
     ensure_mkl_p4m3()
     ensure_mkl_vml_p4()
     ensure_mkl_avx()
-#    ensure_mkl_avx512()   # This one makes windows flag the App as problematic.
     ensure_mkl_p4()
 
 

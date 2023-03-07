@@ -34,8 +34,9 @@
 ##  ------------------------------- ##
 ##     Written by: Jason Deters     ##
 ##      Edited by: Joseph Gutenson  ##
+##      Edited by: Chase Hamilton   ""
 ##  ------------------------------- ##
-##    Last Edited on:  2021-11-16   ##
+##    Last Edited on:  2022-11-10   ##
 ##  ------------------------------- ##
 ######################################
 
@@ -43,17 +44,18 @@
 Graphical user interface for the Antecedent Precipitation Tool
 """
 
+import pickle
+
+
+
 # Import Standard Libraries
 import tkinter
 import tkinter.ttk
 import tkinter.filedialog
 import os
 import sys
-import shutil
 import subprocess
-import traceback
-import datetime
-import time
+from datetime import datetime, timedelta
 import ftplib
 
 # Import 3rd-Party Libraries
@@ -67,21 +69,28 @@ ROOT = os.path.split(MODULE_PATH)[0]
 
 # Import Custom Libraries
 try:
+    from . import anteProcess
     from . import huc_query
     from . import custom_watershed_query
     from . import check_usa
     from . import watershed_summary
     from . import help_window
     from . import get_all
+    from . import netcdf_parse_all
     from .utilities import JLog
 except Exception:
     # Old unfrozen version backwards compatibility step
+    import anteProcess
     import huc_query
     import custom_watershed_query
     import check_usa
     import watershed_summary
     import help_window
     import get_all
+    import netcdf_parse_all
+    from utilities import JLog
+
+"""
     # Add utilities folder to path directly
     PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
     TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
@@ -95,6 +104,7 @@ except Exception:
         UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
         sys.path.append(UTILITIES_FOLDER)
     import JLog
+"""
 
 # Version stuff
 get_all.ensure_version_file()
@@ -108,10 +118,10 @@ with open(VERSION_FILE_PATH, 'r') as VERSION_FILE:
         break
 
 def click_help_button():
-    help_app = help_window.Main()
+    help_app = help_window.HelpWindow()
     help_app.run()
 
-class Main(object):
+class AntGUI(object):
     """GUI for the Antecedent Precipitation Tool"""
 
     def __init__(self):
@@ -129,7 +139,6 @@ class Main(object):
         self.input_list_list_snow = []
         self.input_list_list_snwd = []
         self.show = False
-        self.ncdc_working = False
         # Define Local Variables
         root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -184,11 +193,13 @@ class Main(object):
         self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         #---GRIDDED PRECIPITATION---#
-        self.grid = False
-        # self.grid_selection = tkinter.ttk.Checkbutton(self.master, text='Use Gridded Precipitation?',
-        #                                               offvalue=0, onvalue=1,
-        #                                               command=self.set_grid_input)
-        # self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
+
+        self.gridded = False
+#        self.grid_selection = tkinter.Checkbutton(self.master, text='Use Gridded Precipitation?',
+#                                                  offvalue=0, onvalue=1,
+#                                                  command=self.set_grid_input,)
+#        self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
+#        self.grid_selection.deselect()
 
         #---HELP BUTTON---#
         self.help_button = tkinter.ttk.Button(self.master, text='Help / More Info', image=self.question_image, command=click_help_button)
@@ -532,10 +543,29 @@ class Main(object):
         self.master.rowconfigure(0, weight=1)
 
     def set_grid_input(self):
-        if self.grid_selection.instate(['!selected']):
-            self.grid = False
-        elif self.grid_selection.instate(['selected']):
-            self.grid = True
+        self.gridded = not self.gridded
+        
+        if self.gridded:
+            if netcdf_parse_all.check_thredds_status():
+                self.grid_selection.select()
+            else:
+                error_message = "Unable to retrieve data from www.ncei.noaa.gov/thredds.\n" + \
+                                "Gridded data is currently unavailable.\n" + \
+                                "\n" + \
+                                "If gridded data support is needed, please wait a few minutes and try again.\n" + \
+                                "\n" + \
+                                "If this error persists, please let us know at:\n" + \
+                                "APT-Report-Issue@usace.army.mil"
+
+                tkinter.messagebox.showinfo(title="Warning",
+                                        message=error_message)
+                
+                self.gridded = False
+                self.grid_selection.deselect()
+
+        else:
+            self.grid_selection.deselect()
+
 
     def send_log(self):
         """
@@ -733,9 +763,26 @@ class Main(object):
         Runs the main function with currently selected values.
             -Will run as batch if batch processes have already been entered
         """
+        self.ncdc_working = False
         # Test whether NOAA's servers are online and accessible
-        self.test_noaa_server()
-        if self.ncdc_working:
+        if self.gridded is False:
+            self.test_noaa_server()
+        if self.ncdc_working is True and self.gridded is False:
+            try:
+                current_style = self.batch_style_string_var.get()
+                if current_style == 'Switch to Date Range': # Means it is currently on Unique
+                    self.get_inputs_unique()
+                elif current_style == 'Switch to CSV Input': # Means it is currently on Range
+                    self.get_inputs_range()
+                elif current_style == 'Switch to Unique Dates': #Means it is currently on CSV
+                    self.get_inputs_csv()
+            except Exception:
+                print('The APT cannot complete this analysis.\n')
+                print('The following error occurred. Please close the APT and reboot.\n')
+                # self.L.Wrap(traceback.format_exc())
+                raise
+        if self.ncdc_working is False and self.gridded is True:
+            self.L.print_title("Analyzing NOAA Gridded Dataset")
             try:
                 current_style = self.batch_style_string_var.get()
                 if current_style == 'Switch to Date Range': # Means it is currently on Unique
@@ -822,7 +869,7 @@ class Main(object):
             else:
                 start_month = str(start_month)
             start_date = str(start_year)+'-'+start_month+'-'+start_day
-            start_datetime = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
             # Get end_datetime
             if len(str(end_day)) == 1:
                 end_day = '0'+str(end_day)
@@ -833,7 +880,7 @@ class Main(object):
             else:
                 end_month = str(end_month)
             end_date = str(end_year)+'-'+end_month+'-'+end_day
-            end_datetime = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
         except Exception as error:
             self.L.Wrap('')
             self.L.Wrap('{}!'.format(str(error).upper()))
@@ -867,7 +914,7 @@ class Main(object):
 
             self.calculate_or_add_batch(True, params)
             # Advance 1 day
-            test_datetime = test_datetime + datetime.timedelta(days=1)
+            test_datetime = test_datetime + timedelta(days=1)
         # Submit final request
         if watershed_scale == 'Single Point':
             self.calculate_or_add_batch(False, params)
@@ -1044,14 +1091,14 @@ class Main(object):
                 else:
                     observation_month = str(observation_month)
                 observation_date = str(observation_year)+'-'+observation_month+'-'+observation_day
-                observation_datetime = datetime.datetime.strptime(observation_date, '%Y-%m-%d')
+                observation_datetime = datetime.strptime(observation_date, '%Y-%m-%d')
             except Exception as error:
                 self.L.Wrap('')
                 self.L.Wrap('{}!'.format(str(error).upper()))
                 parameters_valid = False
         if parameters_valid:
             # Ensure date is no later than 2 days prior to current date
-            two_days_prior_datetime = datetime.datetime.today()- datetime.timedelta(days=2)
+            two_days_prior_datetime = datetime.today()- timedelta(days=2)
             if observation_datetime > two_days_prior_datetime:
                 observation_date = two_days_prior_datetime.strftime('%Y-%m-%d')
                 self.L.Wrap('Date cannot exceed two days ago due to data availability')
@@ -1072,7 +1119,7 @@ class Main(object):
         If batch is True
         --Adds current field values to batch list
         """
-        start_time = time.clock()
+        start_time = datetime.now()
         # Get Paramaters
         latitude = params[0]
         longitude = params[1]
@@ -1174,14 +1221,14 @@ class Main(object):
                 else:
                     observation_month = str(observation_month)
                 observation_date = str(observation_year)+'-'+observation_month+'-'+observation_day
-                observation_datetime = datetime.datetime.strptime(observation_date, '%Y-%m-%d')
+                observation_datetime = datetime.strptime(observation_date, '%Y-%m-%d')
             except Exception as error:
                 self.L.Wrap('')
                 self.L.Wrap('{}!'.format(str(error).upper()))
                 parameters_valid = False
         # Ensure date is no later than 2 days prior to current date
         if parameters_valid:
-            two_days_prior_datetime = datetime.datetime.today()- datetime.timedelta(days=2)
+            two_days_prior_datetime = datetime.today()- timedelta(days=2)
             if observation_datetime > two_days_prior_datetime:
                 observation_date = two_days_prior_datetime.strftime('%Y-%m-%d')
                 self.L.Wrap('Date cannot exceed two days ago due to data availability')
@@ -1203,30 +1250,25 @@ class Main(object):
             fixed_y_max = True
         if forecast_enabled == "1":
             forecast_enabled = True
-        # Import anteProcess
-        try:
-            import anteProcess
-        except Exception:
-            from . import anteProcess
         # Set data_variable specific variables
         if radio == 'Rain':
             if self.rain_instance is None:
-                self.L.Wrap("Creating Rain anteProcess.Main() instance...")
-                self.rain_instance = anteProcess.Main()
+                self.L.Wrap("Creating Rain anteProcess.AnteProcess() instance...")
+                self.rain_instance = anteProcess.AnteProcess()
             input_list_list = self.input_list_list_prcp
             ante_instance = self.rain_instance
             data_variable = 'PRCP'
         elif radio == 'Snow':
             if self.snow_instance is None:
-                self.L.Wrap("Creating Snow anteProcess.Main() instance...")
-                self.snow_instance = anteProcess.Main()
+                self.L.Wrap("Creating Snow anteProcess.AnteProcess() instance...")
+                self.snow_instance = anteProcess.AnteProcess()
             input_list_list = self.input_list_list_snow
             ante_instance = self.snow_instance
             data_variable = 'SNOW'
         elif radio == 'Snow Depth':
             if self.snow_depth_instance is None:
-                self.L.Wrap("Creating Snow Depth anteProcess.Main() instance...")
-                self.snow_depth_instance = anteProcess.Main()
+                self.L.Wrap("Creating Snow Depth anteProcess.AnteProcess() instance...")
+                self.snow_depth_instance = anteProcess.AnteProcess()
             input_list_list = self.input_list_list_snwd
             ante_instance = self.snow_depth_instance
             data_variable = 'SNWD'
@@ -1303,8 +1345,12 @@ class Main(object):
             if not len(input_list_list) > 1:
                 self.L.print_title("SINGLE POINT ANALYSIS")
                 run_list = input_list + [save_folder, forecast_enabled]
+
+                with open('temp.pickle', 'wb') as picklefile:
+                    pickle.dump((run_list, ante_instance, self.gridded), picklefile)
+
                 self.L.Wrap('Running: '+str(run_list))
-                result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(run_list, watershed_analysis=False, all_sampling_coordinates=None, grid=self.grid)
+                result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(run_list, watershed_analysis=False, all_sampling_coordinates=None, gridded=self.gridded)
                 if result_pdf is not None:
                     # Open folder containing outputs
                     version_folder = os.path.join(save_folder, VERSION_FOR_PATHS)
@@ -1423,7 +1469,7 @@ class Main(object):
                     self.L.Wrap('')
                     self.L.Wrap('Running: '+str(current_input_list))
                     self.L.Wrap('')
-                    result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=watershed_analysis, all_sampling_coordinates=sampling_points, grid=self.grid)
+                    result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=watershed_analysis, all_sampling_coordinates=sampling_points, gridded=self.gridded)
                     if run_y_max > highest_y_max:
                         highest_y_max = run_y_max
                     if result_pdf is not None:
@@ -1495,7 +1541,8 @@ class Main(object):
                                                                  huc=huc,
                                                                  huc_size=huc_square_miles,
                                                                  results_list=watershed_results_list,
-                                                                 watershed_summary_path=watershed_summary_path)
+                                                                 watershed_summary_path=watershed_summary_path,
+                                                                 grid_selection=self.gridded)
                     if generated:
                         pdf_list = [watershed_summary_path] + pdf_list
                         parts_2_delete.append(watershed_summary_path)
@@ -1525,7 +1572,7 @@ class Main(object):
                             self.L.Wrap('')
                             self.L.Wrap('Re-running with fixed yMax value: '+str(current_input_list))
                             self.L.Wrap('')
-                            result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=False, all_sampling_coordinates=None, grid=self.grid)
+                            result_pdf, run_y_max, condition, ante_score, wet_dry_season, palmer_value, palmer_class = ante_instance.setInputs(current_input_list, watershed_analysis=False, all_sampling_coordinates=None, grid=self.gridded)
                             pdf_list.append(result_pdf)
                             # CHECK TO SEE IF INCREMENTAL MERGING IS NECESSARY
                             pdf_count += 1
@@ -1593,6 +1640,7 @@ class Main(object):
 class DateEntry(tkinter.Frame):
     """Date entry box"""
     def __init__(self, master, frame_look={}, **look):
+        self.gridded = False
         self.recheck = False
         args = dict(relief=tkinter.SUNKEN, border=1)
         args.update(frame_look)
@@ -1606,9 +1654,13 @@ class DateEntry(tkinter.Frame):
         self.month_testable = False
         self.day_testable = False
 
-        self.two_days_prior_datetime = datetime.datetime.today() - datetime.timedelta(days=2)
+        self.two_days_prior_datetime = datetime.today() - timedelta(days=2)
         self.two_days_prior_string = self.two_days_prior_datetime.strftime('%Y-%m-%d')
         self.two_days_prior_year = int(self.two_days_prior_datetime.strftime('%Y'))
+
+        self.three_days_prior_datetime = datetime.today() - timedelta(days=3)
+        self.three_days_prior_string = self.three_days_prior_datetime.strftime('%Y-%m-%d')
+        self.three_days_prior_year = int(self.three_days_prior_datetime.strftime('%Y'))
 
         #---SEPARATOR STYLE---#
         self.line_style = tkinter.ttk.Style()
@@ -1654,12 +1706,19 @@ class DateEntry(tkinter.Frame):
                 else:
                     month = str(month)
                 date_string = str(year)+'-'+month+'-'+day
-                entry_datetime = datetime.datetime.strptime(date_string, '%Y-%m-%d')
+                entry_datetime = datetime.strptime(date_string, '%Y-%m-%d')
                 # Ensure date is no later than 2 days prior to current date
-                if entry_datetime > self.two_days_prior_datetime:
-                    print('')
-                    print('INPUT ERROR - GHCN Data is two days old - Please change to: ({})'.format(self.two_days_prior_string))
-                    self.date_problem = True
+                if self.gridded is False:
+                    if entry_datetime > self.two_days_prior_datetime:
+                        print('')
+                        print('INPUT ERROR - GHCN Data is two days old - Please change to: ({})'.format(self.two_days_prior_string))
+                        self.date_problem = True
+                # Ensure date is no later than 3 days prior to current date
+                if self.gridded is True:
+                    if entry_datetime > self.three_days_prior_datetime:
+                        print('')
+                        print('INPUT ERROR - GHCN Data is three days old - Please change to: ({})'.format(self.three_days_prior_string))
+                        self.date_problem = True
             except Exception as error:
                 self.date_problem = True
                 print('')
@@ -1680,14 +1739,26 @@ class DateEntry(tkinter.Frame):
         entry_text = self.entry_year.get()
         if len(entry_text) > 3:
             int_year = int(entry_text)
-            if int_year < 1910:
-                self.year_problem = True
-                print(' ')
-                print('Year cannot be less than 1910!')
-            elif int_year > self.two_days_prior_year:
-                self.year_problem = True
-                print(' ')
-                print('Year cannot be greater than {}!'.format(self.two_days_prior_year))
+
+            if not self.gridded:
+                if int_year < 1910:
+                    self.year_problem = True
+                    print(' ')
+                    print('Year cannot be less than 1910 for a station based analysis!')
+                elif int_year > self.two_days_prior_year:
+                    self.year_problem = True
+                    print(' ')
+                    print('Year cannot be greater than {}!'.format(self.two_days_prior_year))
+            else:
+                if int_year < 1983:
+                    self.year_problem = True
+                    print(' ')
+                    print('Year cannot be less than 1983 for a grid based analysis!')
+                elif int_year > self.three_days_prior_year:
+                    self.year_problem = True
+                    print(' ')
+                    print('Year cannot be greater than {}!'.format(self.three_days_prior_year))
+
         return entry_text
 
     def _month_eval(self):
@@ -1819,5 +1890,5 @@ class DateEntry(tkinter.Frame):
 
 
 if __name__ == '__main__':
-    APP = Main()
+    APP = AntGUI()
     APP.run()

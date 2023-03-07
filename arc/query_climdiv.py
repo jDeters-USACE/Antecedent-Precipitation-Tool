@@ -50,7 +50,7 @@ import sys
 import urllib3
 import stat
 import time
-import datetime
+from datetime import datetime
 import traceback
 import requests
 
@@ -120,7 +120,7 @@ def ensure_current_pdsidv_file():
     # Try to avoid checking the server, if possible (New file published on 4th of the month)
     check_server = True
     log.Wrap("  Checking for this month's PDSI file on local drive...")
-    today = datetime.datetime.today()
+    today = datetime.today()
     this_month_proc_date = today.strftime('%Y%m04')
     this_month_file_name = 'climdiv-pdsidv-v1.0.0-{}'.format(this_month_proc_date)
     current_file_path = os.path.join(CLIM_DIV_FOLDER, this_month_file_name)

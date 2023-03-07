@@ -41,12 +41,13 @@
 
 
 # Import Standard Libraries
+from datetime import datetime
 import os
 import sys
 import random
 
 # Import 3rd Party Libraries
-import ogr
+from osgeo import ogr
 ogr.UseExceptions()
 
 # Import Custom Libraries
@@ -275,8 +276,7 @@ def shapefile_sample(lat, lon, shapefile):
 
 
 if __name__ == '__main__':
-    import time
-    start_time = time.clock()
+    start_time = datetime.now()
     SCRATCH_FOLDER = os.path.join(ROOT, 'Scratch')
     WATERSHED_FOLDER = os.path.join(SCRATCH_FOLDER, 'Cosumnes River Watershed (ESRI)')
     SHAPEFILE = os.path.join(WATERSHED_FOLDER, 'Cosumnes_River_Watershed.shp')
@@ -289,5 +289,5 @@ if __name__ == '__main__':
 #    print(huc)
 #    for point in sampling_points:
 #        print(point)
-    duration = time.clock() - start_time
+    duration = datetime.now() - start_time
     print('DevOnly: Processing took {} seconds'.format(duration))

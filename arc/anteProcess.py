@@ -34,8 +34,9 @@
 ##  ------------------------------- ##
 ##      Writen by: Jason Deters     ##
 ##      Edited by: Joseph Gutenson  ##
+##      Edited by: Chase Hamilton   ##
 ##  ------------------------------- ##
-##    Last Edited on: 2021-11-16    ##
+##    Last Edited on: 2022-11-10    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -43,13 +44,13 @@
 import os
 import sys
 import time
-import datetime
+from datetime import datetime, timedelta
 import multiprocessing
 import traceback
 import warnings
 import pickle
 import stat
-from operator import itemgetter
+#from operator import itemgetter # No longer used
 
 # Get root folder
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -68,7 +69,7 @@ import pandas
 import ulmo
 from geopy.distance import great_circle
 import matplotlib.pyplot as plt
-from matplotlib.legend_handler import HandlerLine2D
+#from matplotlib.legend_handler import HandlerLine2D # No longer used
 import matplotlib.dates as dates
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
@@ -86,9 +87,9 @@ try:
     from . import getElev
     from . import station_manager
     from . import get_forecast
-    from . import get_all
     from .utilities import JLog
     from .utilities import web_wimp_scraper
+    from . import netcdf_parse_all
 except Exception:
     import query_climdiv
     import process_manager
@@ -96,7 +97,6 @@ except Exception:
     import getElev
     import station_manager
     import get_forecast
-    import get_all
     # Add utilities folder to path directly
     PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
     TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
@@ -111,6 +111,7 @@ except Exception:
         sys.path.append(UTILITIES_FOLDER)
     import JLog
     import web_wimp_scraper
+    import netcdf_parse_all
 
 
 
@@ -119,10 +120,8 @@ except Exception:
 def get_json_multiple_ways(url):
     """Tries to pull JSON data from a URL using urllib3 first and then requests"""
     log = JLog.PrintLog()
-    if 'https://nationalmap.gov/epqs' in url:
-        base_url = 'https://nationalmap.gov/epqs'
-    elif 'https://ned.usgs.gov/epqs' in url:
-        base_url = 'https://ned.usgs.gov/epqs'
+    if 'https://epqs.nationalmap.gov/v1' in url:
+        base_url = 'epqs.nationalmap.gov'
     # Common USGS Error Message
     temp_unavailable_message = 'The requested service is temporarily unavailable.  Please try later.'
     unavailable_error_count = 0
@@ -172,19 +171,23 @@ def get_json_multiple_ways(url):
         pass
 
 def test_usgs_epqs_servers():
+    """
+        ned.usgs.gov retired on 01 MAR 2023, NED-based nationalmap.gov API retired same day.
+
+        Updated to use EPQS-based epqs.nationalmap.gov/v1 API on 02 MAR 2023.
+    """
+
     """Tests if either one of the known USGS Elevation Point Query Service (EPQS) Servers are Online"""
     log = JLog.PrintLog()
     log.print_title('USGS Elevation Point Query Service (EPQS) Status Check')
     log.Wrap('Original - National Map Variant:')
-    test_url_nationalmap = 'https://nationalmap.gov/epqs/pqs.php?x=-121.5&y=38.5&output=json&units=Feet'
+    test_url_nationalmap = 'https://epqs.nationalmap.gov/v1/json?x=-121.5&y=38.5&wkid=4326&units=Feet&includeDate=false'
     log.Wrap('  -Test URL: {}'.format(test_url_nationalmap))
     log.Wrap('  -Attempting to connect (15-second timeout)')
     try:
         json_result = get_json_multiple_ways(test_url_nationalmap)
         log.Wrap('')
-        service = json_result['USGS_Elevation_Point_Query_Service']
-        query = service['Elevation_Query']
-        elevation = query['Elevation']
+        elevation = json_result["value"]
         log.Wrap('')
         log.Wrap('    ###########################################')
         log.Wrap('    # --- National Map EPQS Server Online --- #')
@@ -197,33 +200,8 @@ def test_usgs_epqs_servers():
         log.Wrap('    # --- National Map EPQS Server Offline --- #')
         log.Wrap('    ############################################')
         log.Wrap('')
-    log.Wrap('New Mirror - National Elevation Dataset (NED) Variant:')
-    test_url_ned = 'https://ned.usgs.gov/epqs/pqs.php?x=-121.5&y=38.5&units=Feet&output=json'
-    log.Wrap('  -Test URL: {}'.format(test_url_ned))
-    log.Wrap('  -Attempting to connect (15-second timeout)')
-    try:
-        json_result = get_json_multiple_ways(test_url_ned)
-        log.Wrap('')
-        service = json_result['USGS_Elevation_Point_Query_Service']
-        query = service['Elevation_Query']
-        elevation = query['Elevation']
-        log.Wrap('')
-        log.Wrap('    ##################################')
-        log.Wrap('    # --- NED EPQS Server Online --- #')
-        log.Wrap('    ##################################')
-        log.Wrap(' ')
-        log.Wrap('Proceeding with request...')
-        log.print_separator_line()
-        log.Wrap(' ')
-        return 'ned'
-    except Exception:
-        log.Wrap('')
-        log.Wrap('    ###################################')
-        log.Wrap('    # --- NED EPQS Server Offline --- #')
-        log.Wrap('    ###################################')
-        log.Wrap('')
-        raise Exception('The APT is unable to run if both USGS Elevation Point Query Services are offline.')
-
+        raise Exception('The APT is unable to run if USGS Elevation Point Query Services are offline.')
+    
 def file_older_than(file_path, time_unit, time_value):
     """
     file_path = file to be tested (string)
@@ -353,7 +331,7 @@ def calc_normal_values(dates, values):
 
 # CLASS DEFINITIONS
 
-class Main(object):
+class AnteProcess(object):
     def __init__(self, yMax=None):
         self.yMax = yMax
 
@@ -382,7 +360,7 @@ class Main(object):
         self.log.Wrap('Setting yMax to ' + str(yMax))
         self.yMax = yMax
 
-    def setInputs(self, inputList, watershed_analysis, all_sampling_coordinates, grid):
+    def setInputs(self, inputList, watershed_analysis, all_sampling_coordinates, gridded):
         # Set Inputs
         self.data_type = inputList[0]
         self.site_lat = inputList[1]
@@ -396,7 +374,7 @@ class Main(object):
         self.forecast_setting = inputList[9]
         self.watershed_analysis = watershed_analysis
         self.all_sampling_coordinates = all_sampling_coordinates
-        self.grid = grid # True/False this analysis will be using gridded rainfall
+        self.gridded = gridded # True/False this analysis will be using gridded rainfall
 
         if not self.allStations:
             # Check for previously Cached Station Data from same day
@@ -407,7 +385,7 @@ class Main(object):
             except Exception:
                 pass
             pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
-            if self.data_type == 'PRCP':
+            if self.data_type == 'PRCP' and self.gridded is False:
                 self.log.Wrap('Checking for previously cached NCDC GHCN Weather Station Records...')
                 stations_pickle_exists = os.path.exists(pickle_path)
                 if stations_pickle_exists:
@@ -435,7 +413,7 @@ class Main(object):
                         self.allStations = []
                         os.remove(pickle_path)
         # Calculate Dates
-        self.dates = date_calcs.Main(year, month, day)
+        self.dates = date_calcs.DateCalc(year, month, day)
 
         if self.oldLatLong is None:
             self.oldLatLong = (self.site_lat, self.site_long)
@@ -541,7 +519,7 @@ class Main(object):
                 pass
             pickle_path = os.path.join(pickle_folder, 'stations.pickle')
             stations_pickle_exists = os.path.exists(pickle_path)
-            if self.data_type == 'PRCP':
+            if self.data_type == 'PRCP' and self.gridded is False:
                 if stations_pickle_exists:
                     remove_pickle = False
                     # Call the file stale if it is older than 90 days, because
@@ -567,7 +545,7 @@ class Main(object):
                             self.log.Wrap('Unserializing failed.')
                             self.ghcn_station_list = None
             # Double-check it wasn't created above
-            if self.ghcn_station_list is None:
+            if self.ghcn_station_list is None and self.gridded is False:
                 self.log.Wrap("Downloading list of NCDC GHCN daily weather stations...")
                 self.ghcn_station_list = ulmo.ncdc.ghcn_daily.get_stations(elements=self.data_type,
                                                                            update=True,
@@ -585,7 +563,7 @@ class Main(object):
         self.site_loc = (self.site_lat, self.site_long)
 
 # COMMANDS
-        if self.grid == False:
+        if self.gridded == False:
             # Get Stations
             if self.stations == []:
                 self.getStations()
@@ -756,6 +734,7 @@ class Main(object):
                                                                         weightedDiff,
                                                                         self.dates.normal_period_data_start_date,
                                                                         self.dates.actual_data_end_date,
+                                                                        self.dates.observation_date,
                                                                         self.dates.antecedent_period_start_date)
                         constructor_class_list.append(constructor_class)
         enqueue_count = 0
@@ -772,7 +751,7 @@ class Main(object):
         self.log.print_section('MULTIPROCESSING FINISH')
         count_copy = enqueue_count
         timer_list = []
-        timer_list.append([time.clock(), count_copy])
+        timer_list.append([datetime.now(), count_copy])
         self.log.Wrap('Waiting for sub-processes to download stations:')
         while count_copy > 0:
             # Keep # Minions at original num_minions
@@ -800,10 +779,10 @@ class Main(object):
                 # Discern avg. pace and approximate time remaining
                 if count_copy < enqueue_count:
                     try:
-                        timer_list.append([time.clock(), count_copy])
+                        timer_list.append([datetime.now(), count_copy])
                         if len(timer_list) > 20:
                             timer_list.remove(timer_list[0])
-                        time_taken = time.clock() - timer_list[0][0]
+                        time_taken = datetime.now() - timer_list[0][0]
                         tasks_complete = timer_list[0][1] - count_copy
                         seconds_per_task = time_taken/tasks_complete
                         seconds_remaining = count_copy * seconds_per_task
@@ -820,7 +799,7 @@ class Main(object):
                 # Discern avg. pace and approximate time remaining
                 if count_copy < enqueue_count:
                     try:
-                        time_taken = time.clock() - timer_list[0][0]
+                        time_taken = datetime.now() - timer_list[0][0]
                         tasks_complete = timer_list[0][1] - count_copy
                         seconds_per_task = time_taken/tasks_complete
                         seconds_remaining = count_copy * seconds_per_task
@@ -871,7 +850,7 @@ class Main(object):
                                                                                                       month=self.dates.observation_month,
                                                                                                       pdsidv_file=self.pdsidv_file)
                 # Querying WebWIMP to collect Wet / Dry season info...'
-                self.wimp_scraper.get_season(lat=float(self.site_lat),
+                wet_dry_season_result = self.wimp_scraper.get_season(lat=float(self.site_lat),
                                              lon=float(self.site_long),
                                              month=int(self.dates.observation_month),
                                              output_folder=self.folderPath,
@@ -999,14 +978,18 @@ class Main(object):
 
     def createFinalDF(self):
         # Start to Build Stations Table (continues during iteration below)
-        station_table_column_labels =[["Weather Station Name",
-                                       "Coordinates",
-                                       "Elevation (ft)",
-                                       "Distance (mi)",
-                                       r"Elevation $\Delta$",
-                                       r"Weighted $\Delta$",
-                                       "Days Normal",
-                                       "Days Antecedent"]]
+        if self.gridded is False:
+            station_table_column_labels =[["Weather Station Name",
+                                           "Coordinates",
+                                           "Elevation (ft)",
+                                           "Distance (mi)",
+                                           r"Elevation $\Delta$",
+                                           r"Weighted $\Delta$",
+                                           "Days Normal",
+                                           "Days Antecedent"]]
+        if self.gridded is True:
+            station_table_column_labels =[["",
+                                           "Station Count Summary"]]
 
         # JLG commented this out
         # station_table_values = [["Weather Station Name", "Coordinates", "Elevation (ft)", "Distance (mi)",
@@ -1015,7 +998,7 @@ class Main(object):
         station_table_values = [] # added by JLG
 
         # CREATE EMPTY DATAFRAME (self.finalDF)
-        if self.grid is False:
+        if self.gridded is False:
             if float(self.site_lat) < 50:
                 maxSearchDistance = 60      # Maximum distance between observation point and station location
             else: # In AK, where stations are very rare
@@ -1071,7 +1054,7 @@ class Main(object):
             # number_of_stations = len(self.stations)
                 for station in self.stations:
                 # if self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.grid==False:
-                    if num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.grid==False:
+                    if num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.gridded==False:
                         n += 1
                         if n == 1:
                             self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
@@ -1193,13 +1176,18 @@ class Main(object):
                 self.log.Wrap('No null values within self.finalDF')
 
             else:
-                if self.data_type is not 'PRCP':
+                if self.data_type != 'PRCP':
                     self.log.Wrap('Since this is not for PRCP... filling null values with "0" to allow graph output...')
                     self.finalDF.fillna(0, inplace=True)
                     if self.finalDF.isnull().sum().sum() < 1:
                         self.log.Wrap('No null values within self.finalDF')
             self.log.print_separator_line()
             self.log.Wrap('')
+
+            if self.finalDF.isnull().sum().sum() > 0:
+                self.log.Wrap('Null values remain after interpolation... the APT cannot complete this analysis')
+                self.log.Wrap('')
+                raise
 
             # SAVE finalDF TO CSV IN OUTPUT DIRECTORY
             if self.save_folder is not None:
@@ -1245,33 +1233,31 @@ class Main(object):
                     except Exception:
                         pass
             self.log.print_separator_line()
-        elif self.grid is True:
+        elif self.gridded is True:
             # Grid Section
             num_stations_used = 0
-            if self.cdf_instance is None:
-                import netcdf_parse_all
-                self.cdf_instance = netcdf_parse_all.get_point_history(float(self.site_lat), float(self.site_long))
-                self.cdf_instance()
-                self.gridFolderPath = os.path.join(self.folderPath, "Grid Data")
-                if os.path.isdir(self.gridFolderPath) == True:
-                    pass
-                else:
-                    os.mkdir(self.gridFolderPath)
-                # Save entire TS to CSV in output directory
-                try:
-                    outputName = '({}, {}) Complete AlphaGrid PRCP.csv'.format(self.cdf_instance.closest_lat, self.cdf_instance.closest_lon)
-                    outputName = os.path.join(self.gridFolderPath, outputName)
-                    if os.path.isfile(outputName) is True:
-                        os.remove(outputName)
-                        time.sleep(1)
-                    self.log.Wrap('Saving Complete AlphaGrid PRCP data to CSV in output folder...')
-                    self.cdf_instance.entire_ts.to_csv(outputName)
-                except Exception as F:
-                    self.log.Wrap(str(F))
-            self.log.Wrap('Entire TimeSeries rows = {}'.format(self.cdf_instance.entire_ts.count()))
-            self.finalDF = self.cdf_instance.entire_ts[self.dates.normal_period_data_start_date:self.dates.actual_data_end_date]
+            # if self.cdf_instance is None:
+            self.cdf_instance = netcdf_parse_all.get_point_history(float(self.site_lat),
+                                                                   float(self.site_long),
+                                                                   datetime.strptime(self.dates.observation_date, "%Y-%m-%d"))
+            self.cdf_instance()
+            self.gridFolderPath = os.path.join(self.folderPath, "Grid Data")
+            if os.path.isdir(self.gridFolderPath) == True:
+                pass
+            else:
+                os.mkdir(self.gridFolderPath)
+            # Save entire TS to CSV in output directory
+            outputName = 'gridded_data_{0}.csv'.format(self.dates.observation_date)
+            outputName = os.path.join(self.gridFolderPath, outputName)
+            if os.path.isfile(outputName) is True:
+                os.remove(outputName)
+                time.sleep(1)
+            self.log.Wrap('Saving complete gridded precipitation time series to CSV in output folder...')
+            pandas.concat([self.cdf_instance.entire_precip_ts, self.cdf_instance.entire_station_count_ts], axis=1).to_csv(outputName, header=False)
+            self.log.Wrap('Entire TimeSeries rows = {}'.format(self.cdf_instance.entire_precip_ts.count()))
+            self.finalDF = self.cdf_instance.entire_precip_ts[self.dates.normal_period_data_start_date:self.dates.actual_data_end_date]
             self.log.Wrap('FinalDF rows = {}'.format(self.finalDF.count()))
-            currentValues = self.cdf_instance.entire_ts[self.dates.antecedent_period_start_date:self.dates.current_water_year_end_date]
+            currentValues = self.cdf_instance.entire_precip_ts[self.dates.antecedent_period_start_date:self.dates.current_water_year_end_date]
             self.log.Wrap('Current year rows = {}'.format(currentValues.count()))
             # convert the data into inches
             units = 'in'
@@ -1281,6 +1267,23 @@ class Main(object):
                 if self.finalDF is not None:
                     self.finalDF = self.finalDF * 0.03937008
                     self.log.Wrap('self.finalDF conversion complete.')
+            station_count_data = numpy.float64(self.cdf_instance.entire_station_count_ts[self.dates.normal_period_data_start_date:self.dates.actual_data_end_date])
+            vals = []
+            vals.append("Minimum count of weather stations within 30 miles")
+            vals.append(int(round(station_count_data.min(),0)))
+            station_table_values.append(vals)
+            vals = []
+            vals.append("Mean count of weather stations within 30 miles")
+            vals.append(int(round(station_count_data.mean(),0)))
+            station_table_values.append(vals)
+            vals = []
+            vals.append("Median count of weather stations within 30 miles")
+            vals.append(int(round(numpy.median(station_count_data),0)))
+            station_table_values.append(vals)
+            vals = []
+            vals.append("Maximum count of weathers stations within 30 miles")
+            vals.append(int(round(station_count_data.max(),0)))
+            station_table_values.append(vals)
             # BUILD STATIONS TABLE
             # x = 1
             #row_labels3.append(row_options[0])
@@ -1359,8 +1362,8 @@ class Main(object):
         for item in Dates:
             if self.dates.observation_date in str(item):
                 first_point_datetime = item
-        second_point_datetime = first_point_datetime - datetime.timedelta(days=30)
-        third_point_datetime = second_point_datetime - datetime.timedelta(days=30)
+        second_point_datetime = first_point_datetime - timedelta(days=30)
+        third_point_datetime = second_point_datetime - timedelta(days=30)
         first_point_x_date_string = str(first_point_datetime)[:10]
         second_point_x_date_string = str(second_point_datetime)[:10]
         third_point_x_date_string = str(third_point_datetime)[:10]
@@ -1609,11 +1612,15 @@ class Main(object):
                 self.log.Wrap(traceback.format_exc())
 
         # Pickle values for graph_test if in Dev environment
-        if sys.executable == r'D:\Code\Python\WinPythonARC\WinPythonZero32\python-3.6.5\python.exe':
+        #if sys.executable == r'D:\Code\Python\WinPythonARC\WinPythonZero32\python-3.6.5\python.exe':
+        if True:
             pickle_folder = os.path.join(ROOT, 'cached')
             pickle_path = os.path.join(pickle_folder, 'graph_demo_data.pickle')
             pickle_list = [Dates,
+                           self.cdf_instance,
+                           longRolling30day,
                            rolling30day,
+                           self.dates,
                            self.dates.graph_start_date,
                            self.finalDF,
                            self.dates.graph_end_date,
@@ -1696,6 +1703,8 @@ class Main(object):
             ax4.axis('tight')
 
         # Create a truncated date range to allow for incomplete current water years
+        print(Dates.shape)
+        
         truncate = str(Dates[len(rolling30day)-1])[:10]
         truncDates = pandas.date_range(self.dates.graph_start_date, truncate)
 
@@ -1749,8 +1758,8 @@ class Main(object):
             yMax = self.yMax
 
         # Force the Min and Max X Values to the Graph Dates
-        graph_start_datetime = datetime.datetime.strptime(self.dates.graph_start_date, '%Y-%m-%d')
-        graph_end_datetime = datetime.datetime.strptime(self.dates.graph_end_date, '%Y-%m-%d')
+        graph_start_datetime = datetime.strptime(self.dates.graph_start_date, '%Y-%m-%d')
+        graph_end_datetime = datetime.strptime(self.dates.graph_end_date, '%Y-%m-%d')
         ax1.set_xlim([graph_start_datetime, graph_end_datetime])
 
         # Configure Labels
@@ -1762,19 +1771,22 @@ class Main(object):
         if self.data_type == 'PRCP':
 #            ax1.set_title("Antecedent Precipitation and 30-Year Normal Range from NOAA's Daily Global Historical Climatology Network",
 #                          fontsize=20)
-            if self.grid is False:
+            if self.gridded is False:
                 ax1.set_title("Antecedent Precipitation vs Normal Range based on NOAA's Daily Global Historical Climatology Network",
                               fontsize=20)
-            elif self.grid is True:
-                ax1.set_title("Antecedent Precipitation vs Normal Range based on NOAA's Gridded Daily Global Historical Climatology Network",
+            elif self.gridded is True:
+                ax1.set_title("Antecedent Precipitation vs Normal Range based on NOAA's nClimGrid-Daily Precipitation Data",
                               fontsize=20)
 #            ax1.set_title('NOAA - National Climatic Data Center - Daily Global'
 #                          ' Historical Climatology Network - Rainfall Data',
 #                          fontsize=20)
 
-            if first_point_y_rolling_total is not None:
+            if first_point_y_rolling_total:
                 first_point_label = first_point_x_date_string
-                ax1.annotate(first_point_label, xy=(first_point_x_date_string, first_point_y_rolling_total), xycoords='data',
+                ax1.annotate(first_point_label,
+                             xy=(pandas.Timestamp(first_point_x_date_string),
+                                                  first_point_y_rolling_total),
+                             xycoords='data',
                              xytext=first_point_xytext,
                              textcoords='offset points',
                              size=13,
@@ -1784,9 +1796,12 @@ class Main(object):
                                              connectionstyle="arc3,rad=0.5"),
                             )
 
-            if second_point_y_rolling_total is not None:
+            if second_point_y_rolling_total:
                 second_point_label = second_point_x_date_string
-                ax1.annotate(second_point_label, xy=(second_point_x_date_string, second_point_y_rolling_total), xycoords='data',
+                ax1.annotate(second_point_label,
+                             xy=(pandas.Timestamp(second_point_x_date_string),
+                                 second_point_y_rolling_total),
+                             xycoords='data',
                              xytext=second_point_xytext,
                              textcoords='offset points',
                              size=13,
@@ -1796,9 +1811,12 @@ class Main(object):
                                              connectionstyle="arc3,rad=0.5"),
                             )
 
-            if third_point_y_rolling_total is not None:
+            if third_point_y_rolling_total:
                 third_point_label = third_point_x_date_string
-                ax1.annotate(third_point_label, xy=(third_point_x_date_string, third_point_y_rolling_total), xycoords='data',
+                ax1.annotate(third_point_label,
+                             xy=(pandas.Timestamp(third_point_x_date_string),
+                                                  third_point_y_rolling_total),
+                             xycoords='data',
                              xytext=third_point_xytext,
                              textcoords='offset points',
                              size=13,
@@ -1825,7 +1843,7 @@ class Main(object):
             the_table.set_fontsize(10)
 
             # Plot Stations Table
-            if self.grid is False:
+            if self.gridded is False:
                 station_table_colors = [[light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey, light_grey]]
                 for row in station_table_values[:]:
                     station_table_colors.append([white, white, white, white, white, white, white, white])
@@ -1836,6 +1854,22 @@ class Main(object):
                 stations_table = ax4.table(cellText=station_table_values,
                                            cellColours=station_table_colors,
                                            colWidths=[0.25, 0.15, 0.095, 0.097, 0.087, 0.087, 0.104, 0.132],
+                                           loc='center')
+                stations_table.auto_set_font_size(False)
+                stations_table.set_fontsize(10)
+
+            # Plot station count data from GHCN gridded dataset
+            if self.gridded is True:
+                station_table_colors = [[light_grey, light_grey]]
+                for row in station_table_values[:]:
+                    station_table_colors.append([white, white])
+
+                # combine the station table headers and values after sorting by distance from the location of interest
+                station_table_values = station_table_column_labels + station_table_values
+
+                stations_table = ax4.table(cellText=station_table_values,
+                                           cellColours=station_table_colors,
+                                           colWidths=[0.4, 0.3],
                                            loc='center')
                 stations_table.auto_set_font_size(False)
                 stations_table.set_fontsize(10)
@@ -1965,7 +1999,7 @@ class Main(object):
 
 if __name__ == '__main__':
     SAVE_FOLDER = os.path.join(ROOT, 'Outputs')
-    INSTANCE = Main()
+    INSTANCE = AnteProcess()
         # Input_List reference
 #        self.data_type = inputList[0]
 #        self.site_lat = inputList[1]
@@ -2000,13 +2034,13 @@ if __name__ == '__main__':
     INPUT_LIST = [['PRCP',
                   '33.2098',
                   '-87.5692',
-                  2019,
-                  1,
+                  2021,
+                  10,
                   15,
                   None,
                   None,
                   SAVE_FOLDER,
                   False]]
     for i in INPUT_LIST:
-        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, grid=False)
+        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, grid=True)
     input('Stall for debugging.  Press enter or click X to close')

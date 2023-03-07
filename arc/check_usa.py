@@ -33,8 +33,11 @@
 ##          check_usa.py            ##
 ##  ------------------------------- ##
 ##     Copyright: Jason Deters      ##
+##                                  ##
+##    Written by: Jason Deters      ##
+##     Edited by: Chase Hamilton    ##
 ##  ------------------------------- ##
-##    Last Edited on: 2020-05-27    ##
+##    Last Edited on: 2022-11-10    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -43,29 +46,10 @@
 # Import Standard Libraries
 import os
 import sys
-import random
 
 # Import 3rd Party Libraries
-import ogr
+from osgeo import ogr, gdal
 ogr.UseExceptions()
-
-# Import Custom Libraries
-MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
-ROOT = os.path.split(MODULE_PATH)[0]
-try:
-    from .utilities import JLog
-except Exception:
-    # Reverse compatibility step - Add utilities folder to path directly
-    PYTHON_SCRIPTS_FOLDER = os.path.join(ROOT, 'Python Scripts')
-    TEST = os.path.exists(PYTHON_SCRIPTS_FOLDER)
-    if TEST:
-        UTILITIES_FOLDER = os.path.join(PYTHON_SCRIPTS_FOLDER, 'utilities')
-        sys.path.append(UTILITIES_FOLDER)
-    else:
-        ARC_FOLDER = os.path.join(ROOT, 'arc')
-        UTILITIES_FOLDER = os.path.join(ARC_FOLDER, 'utilities')
-        sys.path.append(UTILITIES_FOLDER)
-    import JLog
 
 
 def main(lat, lon):
@@ -80,7 +64,8 @@ def main(lat, lon):
     # Find USA Boundary Shapefile
     gis_folder = os.path.join(root_folder, 'GIS')
     usa_shapefile_folder = os.path.join(gis_folder, 'us_shp')
-    usa_shapefile_path = os.path.join(usa_shapefile_folder, 'cb_2018_us_nation_5m.shp')
+#   usa_shapefile_path = os.path.join(usa_shapefile_folder, 'cb_2018_us_nation_5m.shp')
+    usa_shapefile_path = os.path.join(usa_shapefile_folder, 'cb_2021_us_nation_5m.shp')
 
     # Get the contents of the USA Boundary Shapefile
     ds_in = ogr.Open(usa_shapefile_path)
@@ -104,7 +89,10 @@ def main(lat, lon):
 
     # Create a point
     pt = ogr.Geometry(ogr.wkbPoint)
-    pt.SetPoint_2D(0, t_lon, t_lat)
+#    pt.SetPoint_2D(0, t_lon, t_lat)
+
+    # ogr seems to have changes lat/lon ordering
+    pt.SetPoint_2D(0, t_lat, t_lon)
 
     # Check if point is within boundary
     for feat_in in lyr_in:

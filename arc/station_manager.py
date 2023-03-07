@@ -49,7 +49,6 @@ by selected type and date range.
 # Import built-in modules
 import os
 import sys
-import traceback
 import time
 
 # Import third-party modules
@@ -87,8 +86,8 @@ class Constructor(object):
     by selected type and date range.
     """
     def __init__(self, dataType, index, name, location, locationTuple, elevation,
-                 distance, elevDiff, weightedDiff, StartDate, EndDate,
-                 currentRollingStartDate):
+                 distance, elevDiff, weightedDiff, StartDate, EndDate, ObservationDate,
+                 CurrentRollingStartDate):
         self.L = JLog.PrintLog()
         self.dataType = dataType
         self.index = index
@@ -101,16 +100,18 @@ class Constructor(object):
         self.weightedDiff = weightedDiff
         self.StartDate = StartDate
         self.EndDate = EndDate
-        self.currentRollingStartDate = currentRollingStartDate
+        self.ObservationDate = ObservationDate
+        self.CurrentRollingStartDate = CurrentRollingStartDate
 
     def __call__(self):
-        aclass = Main(self.dataType, self.index, self.name, self.location, self.locationTuple,
+        aclass = StationManager(self.dataType, self.index, self.name, self.location, self.locationTuple,
                       self.elevation, self.distance, self.elevDiff, self.weightedDiff,
-                      self.StartDate, self.EndDate, self.currentRollingStartDate)
+                      self.StartDate, self.EndDate, self.ObservationDate,
+                      self.CurrentRollingStartDate)
         return aclass
 
 
-class Main(object):
+class StationManager(object):
     """
     Object representing one of NOAA's GHCN Weather Stations.
     Downloads the data from NOAA's servers, calculates the relationship 
@@ -118,8 +119,8 @@ class Main(object):
     by selected type and date range.
     """
     def __init__(self, dataType, index, name, location, locationTuple, elevation,
-                 distance, elevDiff, weightedDiff, StartDate, EndDate,
-                 currentRollingStartDate):
+                 distance, elevDiff, weightedDiff, StartDate, EndDate, ObservationDate,
+                 CurrentRollingStartDate):
         self.L = JLog.PrintLog()
         self.dataType = dataType
         self.index = index
@@ -132,7 +133,8 @@ class Main(object):
         self.weightedDiff = round(float(weightedDiff), 3)
         self.StartDate = StartDate
         self.EndDate = EndDate
-        self.currentRollingStartDate = currentRollingStartDate
+        self.ObservationDate = ObservationDate
+        self.CurrentRollingStartDate = CurrentRollingStartDate
         self.data = None
         self.Values = None
         self.actual_rows = 0
@@ -203,7 +205,7 @@ class Main(object):
                 self.actual_rows = num_rows - num_null
                 # Slicing just current year rows to perform separate tests
                 df_copy = self.Values.copy()
-                current_values = df_copy.loc[self.currentRollingStartDate:self.EndDate]
+                current_values = df_copy.loc[self.CurrentRollingStartDate:self.ObservationDate]
                 current_values.replace('', numpy.nan, inplace=True)
                 current_values.dropna(inplace=True)
                 current_num_rows = len(current_values.index)
@@ -217,14 +219,14 @@ class Main(object):
             self.L.Write(exc_str)
     # End of trimData
 
-    def updateValues(self, site_loc, site_elev, StartDate, EndDate, currentRollingStartDate):
+    def updateValues(self, site_loc, site_elev, StartDate, EndDate, CurrentRollingStartDate):
         """Updates station values based on new location and date range"""
         self.distance = round(great_circle(site_loc, self.locationTuple).miles, 3)
         self.elevDiff = round(abs(site_elev - self.elevation), 3)
         self.weightedDiff = round(self.distance*((self.elevDiff/1000)+0.45), 3)
         self.StartDate = StartDate
         self.EndDate = EndDate
-        self.currentRollingStartDate = currentRollingStartDate
+        self.CurrentRollingStartDate = CurrentRollingStartDate
         self.trimData()
 
     def print_stats(self):
@@ -252,7 +254,7 @@ if __name__ == '__main__':
 #                       site_elev=436.023636,
 #                       StartDate='1987-09-01',
 #                       EndDate='2018-10-15',
-#                       currentRollingStartDate='2018-07-01')
+#                       CurrentRollingStartDate='2018-07-01')
 #        print('Printing stats...')
 #        f.print_stats()
 

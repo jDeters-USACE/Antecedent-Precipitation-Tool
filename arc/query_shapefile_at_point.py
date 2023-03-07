@@ -46,7 +46,7 @@
 import os
 
 # Import 3rd Party Libraries
-import ogr
+from osgeo import ogr
 ogr.UseExceptions()
 
 def check(lon, lat, shapefile, field_name):

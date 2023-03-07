@@ -45,7 +45,7 @@ from __future__ import (print_function, absolute_import)  # Python 3 support
 # Import Standard Libraries
 import os
 import sys
-import datetime
+from datetime import datetime, timedelta
 import time
 import traceback
 
@@ -134,7 +134,7 @@ class EightDayForecast(object):
         # Get data
         for item in daily_data:
             timestamp = item['time']
-            current_day = datetime.datetime.fromtimestamp(int(timestamp))
+            current_day = datetime.fromtimestamp(int(timestamp))
             self.days.append(current_day)
             precipitation_intensity = item['precipIntensity'] # inches per hour
             rain = float(precipitation_intensity)*24
@@ -150,7 +150,7 @@ class EightDayForecast(object):
         # Close output box
         L.Wrap('###############################')
         ### This section just makes the graph look better ###
-        day_after = current_day + datetime.timedelta(days=1)
+        day_after = current_day + timedelta(days=1)
         self.days.append(day_after)
         self.inches.append(0)
         self.milimeters.append(0)
@@ -159,12 +159,12 @@ class EightDayForecast(object):
     def yesterday(self):
         """Requests yesterday's forecast data and then parses the date and mm of precip from the JSON"""
         ### This section just makes the graph look better ###
-        two_days_ago = datetime.datetime.today()- datetime.timedelta(days=2)
+        two_days_ago = datetime.today()- timedelta(days=2)
         self.days.append(two_days_ago)
         self.inches.append(0)
         self.milimeters.append(0)
         ### This section just makes the graph look better ###
-        yesterday = datetime.datetime.today()- datetime.timedelta(days=1)
+        yesterday = datetime.today()- timedelta(days=1)
         yesterday_string = yesterday.strftime('%Y-%m-%dT12:00:00')
         url = 'https://api.darksky.net/forecast/{}/{},{},{}'.format(self.key, self.lat, self.lon, yesterday_string)
         json_conversion = get_json_multiple_ways(url)
@@ -172,7 +172,7 @@ class EightDayForecast(object):
         daily_data = daily['data']
         for item in daily_data:
             timestamp = item['time']
-            current_day = datetime.datetime.fromtimestamp(int(timestamp))
+            current_day = datetime.fromtimestamp(int(timestamp))
             self.days.append(current_day)
             precipitation_intensity = item['precipIntensity'] # self.inches per hour
             rain = float(precipitation_intensity)*24
