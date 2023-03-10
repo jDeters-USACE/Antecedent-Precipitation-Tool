@@ -173,6 +173,10 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     # Parse horizontal units from CS String
     horizontal_units = findHorizontalUnits(str(geo_ref))
     point_ref = ogr.osr.SpatialReference()
+    
+    # Following line added to address GDAL 3.0 changes
+    point_ref.SetAxisMappingStrategy(ogr.osr.OAMS_TRADITIONAL_GIS_ORDER)
+
     point_ref.ImportFromEPSG(4326)
     ctran = ogr.osr.CoordinateTransformation(point_ref, geo_ref)
     rtran = ogr.osr.CoordinateTransformation(geo_ref, point_ref)

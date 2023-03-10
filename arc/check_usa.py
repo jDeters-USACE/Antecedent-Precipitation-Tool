@@ -48,11 +48,11 @@ import os
 import sys
 
 # Import 3rd Party Libraries
-from osgeo import ogr, gdal
+from osgeo import ogr
 ogr.UseExceptions()
 
 
-def main(lat, lon):
+def main(lon, lat):
     """Tests latitude and longitude against a shapefile of the USA boundary"""
     lat = float(lat)
     lon = float(lon)
@@ -80,6 +80,10 @@ def main(lat, lon):
     #project, whatever it may be
     geo_ref = lyr_in.GetSpatialRef()
     point_ref = ogr.osr.SpatialReference()
+
+    # Following line added to address GDAL 3.0 changes
+    point_ref.SetAxisMappingStrategy(ogr.osr.OAMS_TRADITIONAL_GIS_ORDER)
+
     point_ref.ImportFromEPSG(4326)
     ctran = ogr.osr.CoordinateTransformation(point_ref, geo_ref)
     rtran = ogr.osr.CoordinateTransformation(geo_ref, point_ref)

@@ -67,6 +67,10 @@ def check(lon, lat, shapefile, field_name):
     #project, whatever it may be
     geo_ref = shapefile_layer.GetSpatialRef()
     point_ref = ogr.osr.SpatialReference()
+
+    # Following line added to address GDAL 3.0 changes
+    point_ref.SetAxisMappingStrategy(ogr.osr.OAMS_TRADITIONAL_GIS_ORDER)
+    
     point_ref.ImportFromEPSG(4326)
     ctran = ogr.osr.CoordinateTransformation(point_ref, geo_ref)
 

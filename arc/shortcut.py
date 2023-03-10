@@ -95,7 +95,8 @@ def create_shortcut_frozen():
         print('')
     winshell.CreateShortcut(Path=shortcut_path,
                             Target=frozen_exe_path,
-                            StartIn=desktop_path,
+#                            StartIn=desktop_path,
+                            StartIn=root_folder,
                             Icon=(icon, 0),
                             Description=description)
     print('')
