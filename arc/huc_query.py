@@ -53,8 +53,12 @@ from osgeo import ogr
 ogr.UseExceptions()
 
 # Import Custom Libraries
-MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
+try:
+    MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
+except:
+    MODULE_PATH = os.getcwd()
 ROOT = os.path.split(MODULE_PATH)[0]
+
 try:
     from . import get_files
     from .utilities import JLog
@@ -109,7 +113,10 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     log.Wrap("Identifying HUC{} Watershed".format(huc_digits))
     attribute_filter = None
     # Find module path
-    module_folder = os.path.dirname(os.path.realpath(__file__))
+    try:
+        module_folder = os.path.dirname(os.path.realpath(__file__))
+    except:
+        module_folder = os.getcwd()
     # Find ROOT folder
     root_folder = os.path.split(module_folder)[0]
     # Find WBD folder
@@ -146,6 +153,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     # Test for Shapefile
     log.Wrap('Checking for existing Watershed Boundary Data...')
     shapefile_exists = os.path.exists(shapefile)
+
     if shapefile_exists:
         log.Wrap('  Watershed Boundary Data found')
     else:
@@ -158,6 +166,10 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     # Open shapefile
     log.Wrap(' -Reading local HUC{} dataset'.format(huc_digits))
     ds_in = ogr.Open(shapefile)    #Get the contents of the shape file
+
+    print(shapefile)
+    print(ds_in)
+
     lyr_in = ds_in.GetLayer()    #Get the shape file's first layer
 
     # Put the title of the field you are interested in here
@@ -170,6 +182,8 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     #We will create a transformation between this and the shapefile's
     #project, whatever it may be
     geo_ref = lyr_in.GetSpatialRef()
+#    geo_ref.SetAxisMappingStrategy(ogr.osr.OAMS_TRADITIONAL_GIS_ORDER)
+
     # Parse horizontal units from CS String
     horizontal_units = findHorizontalUnits(str(geo_ref))
     point_ref = ogr.osr.SpatialReference()
@@ -183,7 +197,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
 
     # North_America_Albers_Equal_Area_Conic
     albers_ref = ogr.osr.SpatialReference()
-    albers_ref.ImportFromEPSG(102008)
+    albers_ref.SetFromUserInput("ESRI:102008")
     transform_source_to_albers = ogr.osr.CoordinateTransformation(geo_ref, albers_ref)
     transform_albers_to_WGS = ogr.osr.CoordinateTransformation(albers_ref, point_ref)
 
@@ -205,7 +219,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
             if contains_point:
                 selected_huc = feat_in
                 selected_huc_geom = feat_in_geom
-                break    
+                break
 
     # Pure SpatialFilter method, incredibly slow for HUC10 and HUC12 (Hangs)
     else:
@@ -220,18 +234,21 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
             break
 
     # Get Area of selected HUC
-    supported_units = ['meter', 'meters' 'foot', 'feet', 'us feet', 'us foot', 'us_foot', 'foot_us']
+    supported_units = ['meter', 'meters', 'metre', 'foot', 'feet', 'us feet', 'us foot', 'us_foot', 'foot_us']
     if not horizontal_units.lower() in supported_units:
+        
         # Transform geometry to Albers
         selected_huc_geom.Transform(transform_source_to_albers)
+        
         # Update horizontal units
         geo_ref = selected_huc_geom.GetSpatialReference()
         horizontal_units = findHorizontalUnits(str(geo_ref))
+    
     if horizontal_units.lower() in supported_units:
         # Calculate Area
         selected_huc_area = selected_huc_geom.GetArea()
         # Convert Area to Square Miles
-        if horizontal_units.lower() in ['meter', 'meters']:
+        if horizontal_units.lower() in ['meter', 'meters', 'metre']:
             huc_square_miles = selected_huc_area / 2590000
         elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
             huc_square_miles = selected_huc_area / 27880000
@@ -252,7 +269,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
 #        sampling_point_spacing_miles = 2.5 + (huc_square_miles / 1000)
     sampling_point_spacing_miles = 3.75
     # Convert SPSM to SPS Linear Unit
-    if horizontal_units.lower() in ['meter', 'meters']:
+    if horizontal_units.lower() in ['meter', 'meters', 'metre']:
         sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
     elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
         sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
@@ -317,7 +334,7 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
                     points_tested_since_last_success = 0
                     log.Wrap('1500 points tested since the last suitable one was found.  Lowering minimum spacing by 0.5 mile.')
                     sampling_point_spacing_miles = round((sampling_point_spacing_miles - 0.5), 2)
-                    if horizontal_units.lower() in ['meter', 'meters']:
+                    if horizontal_units.lower() in ['meter', 'meters', 'metre']:
                         sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
                     elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
                         sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
@@ -437,7 +454,10 @@ def id_and_sample(lat, lon, watershed_scale):
 def get_huc2_package(huc2):
     # Calculate url and paths
     file_url = 'https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/HU2/Shape/WBD_{}_HU2_Shape.zip'.format(huc2)
-    module_folder = os.path.dirname(os.path.realpath(__file__))
+    try:
+        module_folder = os.path.dirname(os.path.realpath(__file__))
+    except:
+        module_folder = os.getcwd()
     root_folder = os.path.split(module_folder)[0]
     gis_folder = os.path.join(root_folder, 'GIS')
     wbd_folder = os.path.join(gis_folder, 'WBD')
@@ -510,7 +530,10 @@ if __name__ == '__main__':
         print(huc)
         # Export Sampling Points to CSV (DEV ONLY)
         # Find module path, ROOT folder, and SCRATCH folder
-        MODULE_FOLDER = os.path.dirname(os.path.realpath(__file__))
+        try:
+            MODULE_FOLDER = os.path.dirname(os.path.realpath(__file__))
+        except:
+            MODULE_FOLDER = os.getcwd()
         ROOT_FOLDER = os.path.split(MODULE_FOLDER)[0]
         SCRATCH_FOLDER = os.path.join(ROOT_FOLDER, 'Scratch')
         ensure_dir(SCRATCH_FOLDER)

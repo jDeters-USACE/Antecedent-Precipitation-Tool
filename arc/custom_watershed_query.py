@@ -160,7 +160,7 @@ def shapefile_sample(lat, lon, shapefile):
         break
 
     # Get Area of selected HUC
-    supported_units = ['meter', 'meters' 'foot', 'feet', 'us feet', 'us foot', 'us_foot', 'foot_us']
+    supported_units = ['meter', 'meters', 'metre', 'foot', 'feet', 'us feet', 'us foot', 'us_foot', 'foot_us']
     if not original_horizontal_units.lower() in supported_units:
         # Transform geometry to Albers
         selected_feature_geometry.Transform(transform_source_to_albers)
@@ -171,7 +171,7 @@ def shapefile_sample(lat, lon, shapefile):
         # Calculate Area
         selected_huc_area = selected_feature_geometry.GetArea()
         # Convert Area to Square Miles
-        if horizontal_units.lower() in ['meter', 'meters']:
+        if horizontal_units.lower() in ['meter', 'meters', 'metre']:
             huc_square_miles = selected_huc_area / 2590000
         elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
             huc_square_miles = selected_huc_area / 27880000
@@ -182,7 +182,7 @@ def shapefile_sample(lat, lon, shapefile):
     sampling_point_spacing_miles = 3.75
     if sampling_point_spacing_miles < 1:
         sampling_point_spacing_miles = 1
-    if horizontal_units.lower() in ['meter', 'meters']:
+    if horizontal_units.lower() in ['meter', 'meters', 'metre']:
         sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
     elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
         sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
@@ -240,7 +240,7 @@ def shapefile_sample(lat, lon, shapefile):
                 points_tested_since_last_success = 0
                 log.Wrap('3000 points tested since the last suitable one was found.  Lowering minimum spacing by 0.5 mile.')
                 sampling_point_spacing_miles = round((sampling_point_spacing_miles - 0.5), 2)
-                if horizontal_units.lower() in ['meter', 'meters']:
+                if horizontal_units.lower() in ['meter', 'meters', 'metre']:
                     sampling_point_spacing = sampling_point_spacing_miles * 1609.34 # 1609.34 Meters = 1 Mi
                 elif horizontal_units.lower() in ['foot', 'feet', 'us feet', 'us foot', 'foot_us', 'us_foot']:
                     sampling_point_spacing = sampling_point_spacing_miles * 5280 # 5280 Feet = 1 Mi
