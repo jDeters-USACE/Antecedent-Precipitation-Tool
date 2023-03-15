@@ -149,6 +149,7 @@ def get_json_multiple_ways(url):
     try:
         log.print_status_message('Querying {}...'.format(base_url))
         http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+        #http = urllib3.PoolManager(cert_reqs='CERT_NONE')
         response = http.request('GET', url)
         time.sleep(1)
         string_data = str(response.data, 'utf-8')

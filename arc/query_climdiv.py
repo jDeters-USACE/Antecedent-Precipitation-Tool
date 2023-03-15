@@ -141,7 +141,8 @@ def ensure_current_pdsidv_file():
         # Query ProcDate
         log.Wrap('  Querying the name and date of the latest PDSI file...')
         # urllib3
-        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+        #http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+        http = urllib3.PoolManager(cert_reqs='CERT_NONE')
         response = http.request('GET', proc_date_url)
         proc_date = str(response.data.split(b"\n")[0], 'utf-8')
         current_file_name = 'climdiv-pdsidv-v1.0.0-{}'.format(str(proc_date))
