@@ -202,11 +202,14 @@ def huc_id_and_sample(lat, lon, huc_digits, sample=False, base_huc=None):
     transform_albers_to_WGS = ogr.osr.CoordinateTransformation(albers_ref, point_ref)
 
     #Transform incoming longitude/latitude to the shapefile's projection
-    [t_lon, t_lat, z] = ctran.TransformPoint(lon, lat)
+    [t_lon, t_lat, z] = ctran.TransformPoint(lat, lon)
 
     # Create a point
     pt = ogr.Geometry(ogr.wkbPoint)
-    pt.SetPoint_2D(0, t_lon, t_lat)
+    #pt.SetPoint_2D(0, t_lon, t_lat)
+
+    # ogr seems to have changes lat/lon ordering
+    pt.SetPoint_2D(0, t_lat, t_lon)
 
     # For efficiency, filter by HUC8 First (If applicable)
     if attribute_filter is not None:

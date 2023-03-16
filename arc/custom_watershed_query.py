@@ -138,16 +138,19 @@ def shapefile_sample(lat, lon, shapefile):
 
     # North_America_Albers_Equal_Area_Conic
     albers_ref = ogr.osr.SpatialReference()
-    albers_ref.ImportFromEPSG(102008)
+    albers_ref.SetFromUserInput("ESRI:102008")
     transform_source_to_albers = ogr.osr.CoordinateTransformation(geo_ref, albers_ref)
     transform_albers_to_wgs = ogr.osr.CoordinateTransformation(albers_ref, point_ref)
 
     #Transform incoming longitude/latitude to the shapefile's projection
-    [t_lon, t_lat, z] = ctran.TransformPoint(lon, lat)
+    [t_lon, t_lat, z] = ctran.TransformPoint(lat, lon)
 
     # Create a point
     pt = ogr.Geometry(ogr.wkbPoint)
-    pt.SetPoint_2D(0, t_lon, t_lat)
+    #pt.SetPoint_2D(0, t_lon, t_lat)
+
+    # ogr seems to have changes lat/lon ordering
+    pt.SetPoint_2D(0, t_lat, t_lon)
 
     # Set up a spatial filter such that the only features we see when we
     # loop through "lyr_in" are those which overlap the point defined above

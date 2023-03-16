@@ -52,7 +52,7 @@ from osgeo import ogr
 ogr.UseExceptions()
 
 
-def main(lon, lat):
+def main(lat, lon):
     """Tests latitude and longitude against a shapefile of the USA boundary"""
     lat = float(lat)
     lon = float(lon)
@@ -89,7 +89,7 @@ def main(lon, lat):
     rtran = ogr.osr.CoordinateTransformation(geo_ref, point_ref)
 
     #Transform incoming longitude/latitude to the shapefile's projection
-    [t_lon, t_lat, z] = ctran.TransformPoint(lon, lat)
+    [t_lon, t_lat, z] = ctran.TransformPoint(lat, lon)
 
     # Create a point
     pt = ogr.Geometry(ogr.wkbPoint)
