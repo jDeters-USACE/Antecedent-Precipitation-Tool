@@ -202,7 +202,7 @@ def test_usgs_epqs_servers():
         log.Wrap('    ############################################')
         log.Wrap('')
         raise Exception('The APT is unable to run if USGS Elevation Point Query Services are offline.')
-    
+
 def file_older_than(file_path, time_unit, time_value):
     """
     file_path = file to be tested (string)
@@ -1240,7 +1240,8 @@ class AnteProcess(object):
             # if self.cdf_instance is None:
             self.cdf_instance = netcdf_parse_all.get_point_history(float(self.site_lat),
                                                                    float(self.site_long),
-                                                                   datetime.strptime(self.dates.observation_date, "%Y-%m-%d"))
+                                                                   datetime.strptime(self.dates.normal_period_data_start_date, "%Y-%m-%d"),
+                                                                   datetime.strptime(self.dates.actual_data_end_date, "%Y-%m-%d"))
             self.cdf_instance()
             self.gridFolderPath = os.path.join(self.folderPath, "Grid Data")
             if os.path.isdir(self.gridFolderPath) == True:
@@ -1257,6 +1258,7 @@ class AnteProcess(object):
             pandas.concat([self.cdf_instance.entire_precip_ts, self.cdf_instance.entire_station_count_ts], axis=1).to_csv(outputName, header=False)
             self.log.Wrap('Entire TimeSeries rows = {}'.format(self.cdf_instance.entire_precip_ts.count()))
             self.finalDF = self.cdf_instance.entire_precip_ts[self.dates.normal_period_data_start_date:self.dates.actual_data_end_date]
+            print(self.finalDF)
             self.log.Wrap('FinalDF rows = {}'.format(self.finalDF.count()))
             currentValues = self.cdf_instance.entire_precip_ts[self.dates.antecedent_period_start_date:self.dates.current_water_year_end_date]
             self.log.Wrap('Current year rows = {}'.format(currentValues.count()))
@@ -1669,11 +1671,11 @@ class AnteProcess(object):
             # Add Logo
             try:
                 images_folder = os.path.join(ROOT, 'images')
-                logo_file = os.path.join(images_folder, 'RD_1_0.png')
+                logo_file = os.path.join(images_folder, 'RD_2_0.png')
                 logo = plt.imread(logo_file)
             except:
                 images_folder = os.path.join(sys.prefix, 'images')
-                logo_file = os.path.join(images_folder, 'RD_1_0.png')
+                logo_file = os.path.join(images_folder, 'RD_2_0.png')
                 logo = plt.imread(logo_file)
             img = fig.figimage(X=logo, xo=118, yo=8)
 
@@ -1705,7 +1707,7 @@ class AnteProcess(object):
 
         # Create a truncated date range to allow for incomplete current water years
         print(Dates.shape)
-        
+
         truncate = str(Dates[len(rolling30day)-1])[:10]
         truncDates = pandas.date_range(self.dates.graph_start_date, truncate)
 
@@ -2043,5 +2045,5 @@ if __name__ == '__main__':
                   SAVE_FOLDER,
                   False]]
     for i in INPUT_LIST:
-        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, grid=True)
+        INSTANCE.setInputs(i, watershed_analysis=False, all_sampling_coordinates=None, gridded=False)
     input('Stall for debugging.  Press enter or click X to close')

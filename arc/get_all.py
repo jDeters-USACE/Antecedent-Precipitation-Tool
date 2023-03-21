@@ -141,7 +141,7 @@ def ensure_us_shp_folder():
             get_files.ensure_file_exists(file_url=file_url,
                                     local_file_path=local_file_path,
                                     extract_path=us_shp_folder)
-        
+
 
 def ensure_climdiv_folder():
     gis_folder = os.path.join(ROOT_FOLDER, 'GIS')
@@ -249,8 +249,8 @@ def ensure_images():
     local_file_path = os.path.join(images_folder, 'Question.gif')
     get_files.ensure_file_exists(file_url='https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/images/Question.gif',
                                  local_file_path=local_file_path)
-    local_file_path = os.path.join(images_folder, 'RD_1_0.png')
-    get_files.ensure_file_exists(file_url='https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/images/RD_1_0.png',
+    local_file_path = os.path.join(images_folder, 'RD_2_0.png')
+    get_files.ensure_file_exists(file_url='https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/images/RD_2_0.png',
                                  local_file_path=local_file_path)
     local_file_path = os.path.join(images_folder, 'Traverse_40%_503.gif')
     get_files.ensure_file_exists(file_url='https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/images/Traverse_40%25_503.gif',

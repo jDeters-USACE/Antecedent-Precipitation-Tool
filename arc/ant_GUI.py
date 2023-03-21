@@ -34,7 +34,7 @@
 ##  ------------------------------- ##
 ##     Written by: Jason Deters     ##
 ##      Edited by: Joseph Gutenson  ##
-##      Edited by: Chase Hamilton   ""
+##      Edited by: Chase Hamilton   ##
 ##  ------------------------------- ##
 ##    Last Edited on:  2022-11-10   ##
 ##  ------------------------------- ##
@@ -195,11 +195,10 @@ class AntGUI(object):
         #---GRIDDED PRECIPITATION---#
 
         self.gridded = False
-#        self.grid_selection = tkinter.Checkbutton(self.master, text='Use Gridded Precipitation?',
-#                                                  offvalue=0, onvalue=1,
-#                                                  command=self.set_grid_input,)
-#        self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
-#        self.grid_selection.deselect()
+        self.grid_selection = tkinter.Checkbutton(self.master, text='Use Gridded Precipitation?',
+                                                 offvalue=0, onvalue=1, command=self.set_grid_input,)
+        self.grid_selection.grid(row=self.row, column=0, sticky='nw', columnspan=1)
+        self.grid_selection.deselect()
 
         #---HELP BUTTON---#
         self.help_button = tkinter.ttk.Button(self.master, text='Help / More Info', image=self.question_image, command=click_help_button)
@@ -544,7 +543,7 @@ class AntGUI(object):
 
     def set_grid_input(self):
         self.gridded = not self.gridded
-        
+
         if self.gridded:
             if netcdf_parse_all.check_thredds_status():
                 self.grid_selection.select()
@@ -559,7 +558,7 @@ class AntGUI(object):
 
                 tkinter.messagebox.showinfo(title="Warning",
                                         message=error_message)
-                
+
                 self.gridded = False
                 self.grid_selection.deselect()
 

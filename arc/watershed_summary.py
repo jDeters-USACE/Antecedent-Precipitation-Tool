@@ -259,7 +259,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
     from matplotlib import patheffects
 
     # Add Axis Titles
-    title_text_object = fig.suptitle('Antecedent Precipitation Tool v1.0 - Watershed Sampling Summary', fontsize=17, color='white')
+    title_text_object = fig.suptitle('Antecedent Precipitation Tool v2.0 - Watershed Sampling Summary', fontsize=17, color='white')
     title_text_object.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
     ax1_title_object = ax1.set_title('User Inputs', color='white')
     ax1_title_object.set_path_effects([path_effects.Stroke(linewidth=3, foreground='black'), path_effects.Normal()])
