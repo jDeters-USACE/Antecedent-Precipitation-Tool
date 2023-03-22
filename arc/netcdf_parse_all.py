@@ -212,60 +212,6 @@ def get_nc_files(prcp_netcdf_folder, station_count_netcdf_folder, normal_period_
         prcp_file_path = '{0}/{1}/{2}'.format(prcp_netcdf_folder,year,prcp_file)
         nc_dates_and_files.append([date, prcp_file_path, station_count_file_path])
 
-    # print(nc_dates_and_files)
-
-    # month += 3
-    #
-    # if month > 12:
-    #     year += 1
-    #     month -= 12
-    #
-    # current_time = datetime.now()
-    #
-    # if current_time.year <= year and current_time.month <= month:
-    #     month = current_time.month - 2
-    #     if month < 1:
-    #         month += 12
-    #     year = current_time.year - 1
-    #
-    # end_date = datetime(year=year, month=month, day=1)
-    #
-    # nc_dates_and_files = []
-    # #first_year = datetime(1951,1,1)
-    # first_year = datetime(end_date.year - 35,1,1)
-    #
-    # if first_year < datetime(1951,1,1):
-    #     first_year = datetime(1951,1,1)
-    #
-    # years = pandas.date_range(first_year, end_date,freq='AS').year.tolist()
-    # months = ['01','02','03','04','05','06','07','08','09','10','11','12']
-    #
-    # for year in years:
-    #     year = str(year)
-    #     for month in months:
-    #         if datetime.strptime("{}{}".format(year, month), "%Y%m") > end_date:
-    #             break
-    #
-    #         date = '{0}{1}'.format(year,month)
-    #
-    #         station_count_file = 'ncddsupp-{0}-obcounts.nc'.format(date)
-    #         station_count_file_path = '{0}/{1}/{2}'.format(station_count_netcdf_folder,year,station_count_file)
-    #
-    #         # create the paths to the precip netcdfs
-    #         currentMonth = datetime.now().month
-    #         currentYear = datetime.now().year
-    #         currentYearMonth = datetime(currentYear, currentMonth, 1)
-    #         testYearMonth = datetime(int(year), int(month), 1)
-    #         # if the month is within two months of the current month, file name will be different
-    #         delta = relativedelta.relativedelta(currentYearMonth, testYearMonth)
-    #         delta_months = delta.months + (delta.years * 12)
-    #         if delta_months <= 2:
-    #             prcp_file = 'ncdd-{0}-grd-prelim.nc'.format(date)
-    #         else:
-    #             prcp_file = 'ncdd-{0}-grd-scaled.nc'.format(date)
-    #         prcp_file_path = '{0}/{1}/{2}'.format(prcp_netcdf_folder,year,prcp_file)
-    #         nc_dates_and_files.append([date, prcp_file_path, station_count_file_path])
-
     nc_dates_and_files.sort(key=lambda x: x[0], reverse=False)
     return nc_dates_and_files
 
@@ -421,7 +367,9 @@ class get_point_history(object):
 
             print("{} through {}: {}".format(start_date, end_date, datetime.now() - chunk_start))
 
-        print(self.timestamps)
+        # remove "masked" returns from station count results
+        self.station_count_values = [x for x in self.station_count_values if x >= 0]
+        # self.station_count_values.remove("masked")
         print(self.station_count_values)
 
         print('----------')
