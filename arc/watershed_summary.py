@@ -275,7 +275,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
         ['Coordinates', '{}, {}'.format(round(float(site_lat), 6), round(float(site_long), 6))],
         ['Date', observation_date],
         ['Geographic Scope', geographic_scope],
-#        ['Used Gridded Precipitaton', grid_selection]
+        ['Used Gridded Precipitaton', grid_selection]
     ]
 
     # Create Inputs Table Colors
@@ -283,7 +283,7 @@ def create_summary(site_lat, site_long, observation_date, geographic_scope, huc,
         [light_grey, white],
         [light_grey, white],
         [light_grey, white],
-#        [light_grey, white]
+        [light_grey, white]
     ]
 
     # Plot inputs_table
