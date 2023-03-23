@@ -188,6 +188,7 @@ def get_nc_files(prcp_netcdf_folder, station_count_netcdf_folder, normal_period_
             query_dates.append([normal_period_data_start_date.year,normal_period_data_start_date.month])
         normal_period_data_start_date += timedelta(days=1)
 
+    # loop through the days to create the inputs that will feed workers in the multiprocessing step
     for query_date in query_dates:
         year = str(query_date[0])
         month = str(query_date[1])
