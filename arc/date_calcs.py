@@ -64,27 +64,16 @@ def rectify_inputs(year, month, day):
 class DateCalc(object):
     """Calculates and stores all dates for the Antecedent Precipitation Tool"""
 
-    def __init__(self, year, month, day):
+    def __init__(self, year, month, day, gridded):
         self.observation_datetime = rectify_inputs(year, month, day)
-        self.calculate()
+        self.calculate(gridded)
 
-    def calculate(self):
+    def calculate(self, gridded):
         """Calculates all dates for the Antecedent Precipitation Tool"""
         self.observation_date = self.observation_datetime.strftime('%Y-%m-%d')
         self.observation_day = self.observation_datetime.strftime('%d')
         self.observation_month = self.observation_datetime.strftime('%m')
         self.observation_year = int(self.observation_datetime.strftime('%Y'))
-        # # Calculate Start and End dates for the water year in question
-        # # temporary change made by JLG for testing the gridded dataset
-        # self.current_water_year_start_date = str(self.observation_year) + '-01-01'
-        # self.current_water_year_end_date = str(self.observation_year) + '-12-31'
-        # self.prior_water_year_start_date = str(self.observation_year - 1) + '-01-01'
-        # self.prior_water_year_end_date = str(self.observation_year - 1) + '-12-31'
-        # self.following_water_year_start_date = str(self.observation_year + 1) + '-01-01'
-        # self.following_water_year_end_date = str(self.observation_year + 1) + '-12-31'
-        # self.normal_period_start_date = str(self.observation_year - 29)+'-01-01'
-        # self.normal_period_data_start_date = str(self.observation_year - 30)+'-01-01'
-        # self.normal_period_end_date = str(self.observation_year - 1) + '-12-31'
         if int(self.observation_month) > 9:
             self.current_water_year_start_date = str(self.observation_year) + '-10-01'
             self.current_water_year_end_date = str(self.observation_year + 1) + '-09-30'
@@ -129,14 +118,18 @@ class DateCalc(object):
             except:
                 break
         # Determine actual expected end data (NOAA Data Availability)
-        two_days_prior_datetime = datetime.today() - timedelta(days=2)
-        if graph_end_datetime > two_days_prior_datetime:
-            self.actual_data_end_date = two_days_prior_datetime.strftime('%Y-%m-%d')
+        if gridded is False:
+            prior_datetime = datetime.today() - timedelta(days=2)
+        elif gridded is True:
+            prior_datetime = datetime.today() - timedelta(days=4)
+        if graph_end_datetime > prior_datetime:
+            self.actual_data_end_date = prior_datetime.strftime('%Y-%m-%d')
         else:
             self.actual_data_end_date = self.graph_end_date
 
 if __name__ == '__main__':
-    test = DateCalc(1910, 1, 1)
-    print(test.graph_start_date)
-    print(test.graph_end_date)
+    test = DateCalc(2022, 2, 25, False)
     print(test.normal_period_data_start_date)
+    print(test.actual_data_end_date)
+    print(test.observation_date)
+    print(test.antecedent_period_start_date)

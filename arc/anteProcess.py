@@ -253,9 +253,7 @@ def value_list_to_water_year_table(dates, values):
     leap_day_rolling_totals = []
     log.Wrap('Collecting all rolling totals for each day of the year...')
     for row in dates:
-        # JLG changed this for testing the gridded dataset.
         if '-10-01' in str(row):
-        # if '-01-01' in str(row):
             if newrow is not None:
                 # convert list to array
                 A = numpy.array(newrow)
@@ -377,44 +375,45 @@ class AnteProcess(object):
         self.all_sampling_coordinates = all_sampling_coordinates
         self.gridded = gridded # True/False this analysis will be using gridded rainfall
 
-        if not self.allStations:
-            # Check for previously Cached Station Data from same day
-            pickle_folder = os.path.join(ROOT, 'cached')
-            # Ensure pickle_folder exists
-            try:
-                os.makedirs(pickle_folder)
-            except Exception:
-                pass
-            pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
-            if self.data_type == 'PRCP' and self.gridded is False:
-                self.log.Wrap('Checking for previously cached NCDC GHCN Weather Station Records...')
-                stations_pickle_exists = os.path.exists(pickle_path)
-                if stations_pickle_exists:
-                    self.log.Wrap('  Cached station data found. Testing...')
-                    expiration_hours = 12
-                    stale = file_older_than(file_path=pickle_path,
-                                            time_unit='hours',
-                                            time_value=expiration_hours)
-                    if stale:
-                        self.log.Wrap('    Cached station data older than {} hours. Deleting...'.format(expiration_hours))
-                        os.remove(pickle_path)
-                    else:
-                        pickle_size = os.path.getsize(pickle_path)
-                        if pickle_size < 15682622:
-                            self.log.Wrap('    Cached station data corrupt. Deleting...')
-                            os.remove(pickle_path)
-                stations_pickle_exists = os.path.exists(pickle_path)
-                if stations_pickle_exists:
-                    self.log.Wrap('Unserializing cached station data..."')
-                    try:
-                        with open(pickle_path, 'rb') as handle:
-                            self.allStations = pickle.load(handle)
-                    except:
-                        self.log.Wrap('Unserialization failed. Deleting...')
-                        self.allStations = []
-                        os.remove(pickle_path)
+        # JLG commented this out on 2023-04-24 to fix Oregon bug
+        # if not self.allStations:
+        #     # Check for previously Cached Station Data from same day
+        #     pickle_folder = os.path.join(ROOT, 'cached')
+        #     # Ensure pickle_folder exists
+        #     try:
+        #         os.makedirs(pickle_folder)
+        #     except Exception:
+        #         pass
+        #     pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
+        #     if self.data_type == 'PRCP' and self.gridded is False:
+        #         self.log.Wrap('Checking for previously cached NCDC GHCN Weather Station Records...')
+        #         stations_pickle_exists = os.path.exists(pickle_path)
+        #         if stations_pickle_exists:
+        #             self.log.Wrap('  Cached station data found. Testing...')
+        #             expiration_hours = 12
+        #             stale = file_older_than(file_path=pickle_path,
+        #                                     time_unit='hours',
+        #                                     time_value=expiration_hours)
+        #             if stale:
+        #                 self.log.Wrap('    Cached station data older than {} hours. Deleting...'.format(expiration_hours))
+        #                 os.remove(pickle_path)
+        #             else:
+        #                 pickle_size = os.path.getsize(pickle_path)
+        #                 if pickle_size < 15682622:
+        #                     self.log.Wrap('    Cached station data corrupt. Deleting...')
+        #                     os.remove(pickle_path)
+        #         stations_pickle_exists = os.path.exists(pickle_path)
+        #         if stations_pickle_exists:
+        #             self.log.Wrap('Unserializing cached station data..."')
+        #             try:
+        #                 with open(pickle_path, 'rb') as handle:
+        #                     self.allStations = pickle.load(handle)
+        #             except:
+        #                 self.log.Wrap('Unserialization failed. Deleting...')
+        #                 self.allStations = []
+        #                 os.remove(pickle_path)
         # Calculate Dates
-        self.dates = date_calcs.DateCalc(year, month, day)
+        self.dates = date_calcs.DateCalc(year, month, day, self.gridded)
 
         if self.oldLatLong is None:
             self.oldLatLong = (self.site_lat, self.site_long)
@@ -569,6 +568,8 @@ class AnteProcess(object):
             if self.stations == []:
                 self.getStations()
             else:
+                # JLG commented out on 2023-04-24 to test the Oregon bug
+                # commenting this out fixed the bug but slows things down
                 # for station in self.recentStations:
                 #     if station.data is None:
                 #         station.run()
@@ -708,19 +709,22 @@ class AnteProcess(object):
                     elevation = row_elev_meters*3.28084
                     elevDiff = abs(self.obs_elevation - elevation)
                     weightedDiff = distance*((elevDiff/1000)+0.45)
-                    for item in self.allStations:
-                        if item.name == name:
-                            station_number_for_print += 1
-                            self.log.Wrap('Station {} - {} - Data previously acquired'.format(station_number_for_print,
-                                                                                              name))
-                            already = item
-                            already.updateValues(self.site_loc,
-                                                 self.obs_elevation,
-                                                 self.dates.normal_period_data_start_date,
-                                                 self.dates.actual_data_end_date,
-                                                 self.dates.antecedent_period_start_date)
-                            self.stations.append(already)
-                            # self.recentStations.append(already)
+                    # JLG commented out on 2023-04-24 to test the Oregon bug
+                    # commenting this out fixed the bug but slows things down
+
+                    # for item in self.allStations:
+                    #     if item.name == name:
+                    #         station_number_for_print += 1
+                    #         self.log.Wrap('Station {} - {} - Data previously acquired'.format(station_number_for_print,
+                    #                                                                           name))
+                    #         already = item
+                    #         already.updateValues(self.site_loc,
+                    #                              self.obs_elevation,
+                    #                              self.dates.normal_period_data_start_date,
+                    #                              self.dates.actual_data_end_date,
+                    #                              self.dates.antecedent_period_start_date)
+                    #         self.stations.append(already)
+                    #         # self.recentStations.append(already)
                     if already is False:
                         station_number_for_print += 1
                         self.log.Wrap('Station {} - {}'.format(station_number_for_print, name))
@@ -867,21 +871,22 @@ class AnteProcess(object):
         self.finish_multiprocessing(tasks_queue, results_queue, minions, enqueue_count)
 
         # Pickle All Stations for re-use the same day
-        if self.data_type == 'PRCP':
-            self.log.Wrap('Attempting to pickle Station Records for future use within 12 hours...')
-            pickle_folder = os.path.join(ROOT, 'cached')
-            pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
-            if os.path.exists(pickle_path) is True:
-                try:
-                    os.remove(pickle_path)
-                except Exception:
-                    pass
-            # Store Data (serialize)
-            try:
-                with open(pickle_path, 'wb') as handle:
-                    pickle.dump(self.allStations, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            except Exception:
-                pass
+        # JLG commented this out on 2023-04-24 to fix Oregon bug
+        # if self.data_type == 'PRCP':
+        #     self.log.Wrap('Attempting to pickle Station Records for future use within 12 hours...')
+        #     pickle_folder = os.path.join(ROOT, 'cached')
+        #     pickle_path = os.path.join(pickle_folder, 'station_classes.pickle')
+        #     if os.path.exists(pickle_path) is True:
+        #         try:
+        #             os.remove(pickle_path)
+        #         except Exception:
+        #             pass
+        #     # Store Data (serialize)
+        #     try:
+        #         with open(pickle_path, 'wb') as handle:
+        #             pickle.dump(self.allStations, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        #     except Exception:
+        #         pass
 
     def getBest(self, need_primary):
         lowestDiff = 10000
@@ -992,10 +997,6 @@ class AnteProcess(object):
             station_table_column_labels =[["",
                                            "Station Count Summary"]]
 
-        # JLG commented this out
-        # station_table_values = [["Weather Station Name", "Coordinates", "Elevation (ft)", "Distance (mi)",
-        #                          r"Elevation $\Delta$", r"Weighted $\Delta$", "Days (Normal)", "Days (Antecedent)"]]
-
         station_table_values = [] # added by JLG
 
         # CREATE EMPTY DATAFRAME (self.finalDF)
@@ -1054,21 +1055,13 @@ class AnteProcess(object):
             while self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance:
             # number_of_stations = len(self.stations)
                 for station in self.stations:
-                # if self.finalDF.isnull().sum().sum() > 0 and num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.grid==False:
                     if num_stations_used < maxNumberOfStations and self.searchDistance <= maxSearchDistance and self.gridded==False:
                         n += 1
                         if n == 1:
                             self.log.Wrap(str(self.finalDF.isnull().sum().sum()) + ' null values.')
                         if self.searchDistance > 60:
                             need_primary = False
-                        # best_station = self.getBest(need_primary=need_primary)
-                        # if best_station is not None:
-                            # Note that the primary station has been found
-                            # if need_primary is True:
-                            #     need_primary = False
-                            #     primary_station = best_station # added by JLG
-                                # recalcuate and set source
-                            # Get baseline null value count
+                        # Get baseline null value count
                         missing_before_normal = self.finalDF[self.dates.normal_period_data_start_date:self.dates.normal_period_end_date].isnull().sum().sum()
                         missing_before_antecedent = self.finalDF[self.dates.antecedent_period_start_date:self.dates.observation_date].isnull().sum().sum()
                         values = station.Values
@@ -1118,7 +1111,7 @@ class AnteProcess(object):
                         self.searchDistance += 10 # Search distance increase interval
                     else:
                         self.searchDistance += 30 # In alaska it will probably go even higher.
-                    if self.finalDF.isnull().sum().sum() > 5:
+                    if self.finalDF.isnull().sum().sum() > 1:
                         if self.searchDistance <= maxSearchDistance:
                             # Clearing previous table data
                             station_table_values = []
@@ -1158,8 +1151,8 @@ class AnteProcess(object):
                     num_rows_antecedent = missing_before_antecedent - missing_after_antecedent
                     num_rows = num_rows_normal + num_rows_antecedent
                     if num_rows > 0:
+                        # BUILD STATIONS TABLE by adding interpolation details to the stations
                         num_stations_used += 1
-                        # BUILD STATIONS TABLE
                         vals = []
                         vals.append("Linear Interpolation")
                         vals.append("N/A")
@@ -1258,7 +1251,6 @@ class AnteProcess(object):
             pandas.concat([self.cdf_instance.entire_precip_ts, self.cdf_instance.entire_station_count_ts], axis=1).to_csv(outputName, header=False)
             self.log.Wrap('Entire TimeSeries rows = {}'.format(self.cdf_instance.entire_precip_ts.count()))
             self.finalDF = self.cdf_instance.entire_precip_ts[self.dates.normal_period_data_start_date:self.dates.actual_data_end_date]
-            print(self.finalDF)
             self.log.Wrap('FinalDF rows = {}'.format(self.finalDF.count()))
             currentValues = self.cdf_instance.entire_precip_ts[self.dates.antecedent_period_start_date:self.dates.current_water_year_end_date]
             self.log.Wrap('Current year rows = {}'.format(currentValues.count()))
@@ -1897,7 +1889,7 @@ class AnteProcess(object):
             elif num_stations_used == 11:
                 bValue = 0.068
             else:
-                bValue = 0.075
+                bValue = 0.08
 
             # Determine horizontal separation value by table rows
             if num_stations_used < 9:
@@ -1905,7 +1897,7 @@ class AnteProcess(object):
             elif num_stations_used < 11:
                 hValue = 0.17
             else:
-                hValue = 0.40
+                hValue = 0.8
 
             # Remove space between subplots
             plt.subplots_adjust(wspace=0.00,

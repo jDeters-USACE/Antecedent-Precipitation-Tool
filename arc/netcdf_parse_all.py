@@ -201,12 +201,14 @@ def get_nc_files(prcp_netcdf_folder, station_count_netcdf_folder, normal_period_
         # create the paths to the precip netcdfs
         currentMonth = datetime.now().month
         currentYear = datetime.now().year
+        currentDay = datetime.now().day
         currentYearMonth = datetime(currentYear, currentMonth, 1)
         testYearMonth = datetime(int(year), int(month), 1)
         # if the month is within two months of the current month, file name will be different
         delta = relativedelta.relativedelta(currentYearMonth, testYearMonth)
         delta_months = delta.months + (delta.years * 12)
-        if delta_months < 2:
+        # if within 2 months, the preliminary grid may still apply
+        if delta_months <= 2:
             prcp_file = 'ncdd-{0}-grd-prelim.nc'.format(date)
         else:
             prcp_file = 'ncdd-{0}-grd-scaled.nc'.format(date)
@@ -237,7 +239,21 @@ def nc_file_worker(args):
     station_count_values = []
 
     # Open precip dataset
-    prcp_dataset = netCDF4.Dataset(nc_file[1], 'r')
+    # assume if there is an issue opening the precip dataset it's because
+    # the file is still preliminary
+    # if the error persists, it must be something with the THREDDS server
+    try:
+        prcp_dataset = netCDF4.Dataset(nc_file[1], 'r')
+    except:
+        try:
+            nc_file_path = nc_file[1]
+            nc_file_path = nc_file_path[:-9]
+            nc_file_path = "{0}prelim.nc".format(nc_file_path)
+            prcp_dataset = netCDF4.Dataset(nc_file_path, 'r')
+        except:
+            print("It appears the nClimGrid-Daily THREDDS data service is experiecing issues, please try again...\n")
+            print("If the problems persists, please contact the nClimGrid-Daily team at ncei.grids@noaa.gov\n")
+
     prcp = prcp_dataset.variables['prcp']
     timevar = prcp_dataset.variables['time']
     timeunits = timevar.units

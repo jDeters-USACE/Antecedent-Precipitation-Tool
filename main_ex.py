@@ -78,7 +78,8 @@ def main():
     APP.run()
 
 if __name__ == '__main__':
-    arc.get_all.ensure_antecdent_precipitation_tool_exe()
+    # arc.get_all.get_latest_release()
+    # arc.get_all.ensure_antecdent_precipitation_tool_exe()
     arc.get_all.ensure_images()
     arc.get_all.ensure_wbd_folder()
     arc.get_all.ensure_us_shp_folder()

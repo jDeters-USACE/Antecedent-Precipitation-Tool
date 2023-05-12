@@ -36,11 +36,12 @@
 ##     Written by: Jason Deters     ##
 ##     Edited by: Joseph Gutenson   ##
 ##  ------------------------------- ##
-##    Last Edited on: 2021-11-16    ##
+##    Last Edited on: 2023-04-26    ##
 ##  ------------------------------- ##
 ######################################
 
 import os
+from pathlib import Path
 
 try:
     from . import get_files
@@ -75,15 +76,17 @@ def ensure_antecdent_precipitation_tool_exe():
 
 
 def get_latest_release():
-    local_file_path = os.path.join(ROOT_FOLDER, 'Antecedent Precipitation Tool.7z')
+    local_file_path = os.path.join(str(Path(ROOT_FOLDER).parents[0]), 'Antecedent.Precipitation.Tool.7z')
     file_url = 'https://github.com/erdc/Antecedent-Precipitation-Tool/releases/latest/download/Antecedent.Precipitation.Tool.7z'
     version_folder = os.path.join(ROOT_FOLDER, 'v')
     local_version_file = os.path.join(version_folder, 'release')
-#   web_version_url = ""
-    #get_files.get_only_newer_version(file_url=file_url,
-    #                                 local_file_path=local_file_path,
-    #                                 version_url=web_version_url,
-    #                                 version_local_path=local_version_file)
+    web_version_url = "https://raw.githubusercontent.com/erdc/Antecedent-Precipitation-Tool/master/v/apt"
+    extraction_path = str(Path(ROOT_FOLDER).parents[0])
+    get_files.get_only_newer_version(file_url=file_url,
+                                    local_file_path=local_file_path,
+                                    version_url=web_version_url,
+                                    version_local_path=local_version_file,
+                                    extract_path=extraction_path)
 
 def attempt_repair():
     local_file_path = os.path.join(ROOT_FOLDER, 'APT Repair Package.zip')
