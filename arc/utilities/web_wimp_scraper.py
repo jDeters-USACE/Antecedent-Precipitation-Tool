@@ -41,7 +41,7 @@
 """
 Web-Scrapes WebWIMP:
 The Web-based, Water-Budget, Interactive, Modeling Program using
-Selenium to operate the JavaScript forms at "http://climate.geog.udel.edu/~wimp/index.html"
+Selenium to operate the JavaScript forms at "http://cyclops.deos.udel.edu/wimp/public_html/index.html"
 
 Parses WebWIMP data for specific monthly values and determine Wet or Dry
 season using instructions from the Regional Supplement copied below:
@@ -67,10 +67,10 @@ Wetlands that periodically lack indicators of wetland hydrology:
     Based Water-Budget Interactive Modeling Program (WebWIMP) is
     one source for approximate dates of wet and dry seasons for any
     terrestrial location based on average monthly precipitation and estimated
-    evapotranspiration (http://climate.geog.udel.edu/~wimp/). In general, the
-    dry season in a typical year is indicated when potential evapotranspiration
-    exceeds precipitation (indicated by negative values of DIFF in the
-    WebWIMP output), resulting in drawdown of soil moisture storage
+    evapotranspiration (http://cyclops.deos.udel.edu/wimp/public_html/index.html).
+    In general, the dry season in a typical year is indicated when potential
+    evapotranspiration exceeds precipitation (indicated by negative values of
+    DIFF in the WebWIMP output), resulting in drawdown of soil moisture storage
     (negative values of DST) and/or a moisture deficit (positive values of
     DEF, also called the unmet atmospheric demand for moisture). Actual
     dates for the dry season vary by locale and year.
@@ -153,11 +153,12 @@ class wimp_checker(object):
         """
         Queries WebWIMP:
         The Web-based, Water-Budget, Interactive, Modeling Program using
-        Selenium to operate the JavaScript forms at "http://climate.geog.udel.edu/~wimp/index.html"
+        Selenium to operate the JavaScript forms at
+        "http://cyclops.deos.udel.edu/wimp/public_html/index.html"
         """
         # Create PrintLog
         log = JLog.PrintLog(Indent=2)
-        url = "http://climate.geog.udel.edu/~wimp/index.html"
+        url = "http://cyclops.deos.udel.edu/wimp/public_html/index.html"
         log.Wrap('Scraping Page ({})...'.format(url))
 
         try:
@@ -412,7 +413,7 @@ def calculate_wet_dry_table(wimp_rows, output_folder=None):
         Based Water-Budget Interactive Modeling Program (WebWIMP) is
         one source for approximate dates of wet and dry seasons for any
         terrestrial location based on average monthly precipitation and estimated
-        evapotranspiration (http://climate.geog.udel.edu/~wimp/). In general, the
+        evapotranspiration (http://cyclops.deos.udel.edu/wimp/public_html/index.html). In general, the
         dry season in a typical year is indicated when potential evapotranspiration
         exceeds precipitation (indicated by negative values of DIFF in the
         WebWIMP output), resulting in drawdown of soil moisture storage
