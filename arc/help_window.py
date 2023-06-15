@@ -35,7 +35,7 @@
 ##      Writen by: Jason Deters     ##
 ##      Edited by: Joseph Gutenson  ##
 ##  ------------------------------- ##
-##    Last Edited on: 2021-11-16    ##
+##    Last Edited on: 2023-06-15    ##
 ##  ------------------------------- ##
 ######################################
 
@@ -222,9 +222,9 @@ class HelpWindow(object):
         self.row += 1
         # Create/Grid ITEMS for WATERSHED SCALE USAGE
         self.add_reference(frame='Methodology',
-                           title='Technical and User Guide (Gutenson and Deters, 2021):',
-                           pdf_local_path=os.path.join(docs_folder, 'Gutenson and Deters.pdf'),
-                           pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/Gutenson and Deters.pdf",
+                           title='Technical and User Guide (Gutenson et al., 2023):',
+                           pdf_local_path=os.path.join(docs_folder, 'Gutenson_etal_2023.pdf'),
+                           pdf_url="https://github.com/erdc/Antecedent-Precipitation-Tool/raw/master/help/Gutenson_etal_2023.pdf",
                            youtube_url=None)
         self.add_reference(frame='Methodology',
                            title='Accessing and Using Meteorological Data to Evaluate Wetland Hydrology (Sprecher and Warne, 2000):',
