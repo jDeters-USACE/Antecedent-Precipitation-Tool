@@ -239,8 +239,7 @@ def nc_file_worker(args):
     station_count_values = []
 
     # Open precip dataset
-    # assume if there is an issue opening the precip dataset it's because
-    # the file is still preliminary
+    # and test if the issue with NOAA's naming convention
     # if the error persists, it must be something with the THREDDS server
     try:
         prcp_dataset = netCDF4.Dataset(nc_file[1], 'r')
@@ -251,8 +250,14 @@ def nc_file_worker(args):
             nc_file_path = "{0}prelim.nc".format(nc_file_path)
             prcp_dataset = netCDF4.Dataset(nc_file_path, 'r')
         except:
-            print("It appears the nClimGrid-Daily THREDDS data service is experiecing issues, please try again...\n")
-            print("If the problems persists, please contact the nClimGrid-Daily team at ncei.grids@noaa.gov\n")
+            try:
+                nc_file_path = nc_file[1]
+                nc_file_path = nc_file_path[:-9]
+                nc_file_path = "{0}scaled.nc".format(nc_file_path)
+                prcp_dataset = netCDF4.Dataset(nc_file_path, 'r')
+            except:
+                print("It appears the nClimGrid-Daily THREDDS data service is experiecing issues, please try again...\n")
+                print("If the problems persists, please contact the nClimGrid-Daily team at ncei.grids@noaa.gov\n")
 
     prcp = prcp_dataset.variables['prcp']
     timevar = prcp_dataset.variables['time']
@@ -386,8 +391,6 @@ class get_point_history(object):
 
         # remove "masked" returns from station count results
         self.station_count_values = [x for x in self.station_count_values if x >= 0]
-        # self.station_count_values.remove("masked")
-        print(self.station_count_values)
 
         print('----------')
         print('')
